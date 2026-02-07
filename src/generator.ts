@@ -82,6 +82,6 @@ type ParamTypeMap = ${paramTypeMap};
 export type Routes = RouteBuilderObject<typeof ROUTE_STRUCTURE, ParamTypeMap>;
 
 // Route builder instance
-export const routes = createRouteBuilder(ROUTE_STRUCTURE, [], "${basePrefix}") as Routes;
+export const routes = createRouteBuilder<typeof ROUTE_STRUCTURE, ParamTypeMap>(ROUTE_STRUCTURE, [], "${basePrefix}");
 `;
 };
