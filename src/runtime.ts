@@ -2,6 +2,8 @@
  * Core route builder runtime
  */
 
+import type { RouteBuilderObject } from "./types";
+
 /**
  * Build a typed API route path from segments
  */
@@ -13,12 +15,12 @@ export const buildRoutePath = (segments: (string | number)[], basePrefix: string
 /**
  * Recursively build route builder functions from route structure
  */
-export const createRouteBuilder = <T extends Record<string, any>>(
+export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<string, never>>(
   structure: T,
   basePath: (string | number)[] = [],
   basePrefix: string = "",
-): any => {
-  const builder: any = {};
+): RouteBuilderObject<T, TMap> => {
+  const builder = {} as RouteBuilderObject<T, TMap>;
 
   for (const [key, value] of Object.entries(structure)) {
     // Skip metadata keys, but not route segment keys like $documentId
@@ -36,7 +38,7 @@ export const createRouteBuilder = <T extends Record<string, any>>(
 
       if (hasParam) {
         // This level has a parameter
-        builder[key] = (param: string | number) => {
+        (builder as any)[key] = (param: string | number) => {
           const paramPath = [...currentPath.slice(0, -1), param];
 
           if (hasChildren) {
@@ -58,7 +60,7 @@ export const createRouteBuilder = <T extends Record<string, any>>(
         };
       } else if (hasRoute && !hasChildren) {
         // Leaf route with no children or params
-        builder[key] = () => buildRoutePath(currentPath, basePrefix);
+        (builder as any)[key] = () => buildRoutePath(currentPath, basePrefix);
       } else {
         // Has children, recurse
         const children = createRouteBuilder(value, currentPath, basePrefix);
@@ -66,7 +68,7 @@ export const createRouteBuilder = <T extends Record<string, any>>(
           // Also a route itself
           Object.assign(children, { $: () => buildRoutePath(currentPath, basePrefix) });
         }
-        builder[key] = children;
+        (builder as any)[key] = children;
       }
     }
   }
