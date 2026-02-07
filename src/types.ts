@@ -18,7 +18,9 @@ export type RouteBuilder<T, TMap = {}> = T extends { $param: infer P extends str
       ? (param: GetParamType<P, TMap>) => string
       : (param: GetParamType<P, TMap>) => RouteBuilderObject<Omit<T, "$param">, TMap>
   : T extends { $route: true }
-    ? () => string
+    ? HasChildren<T> extends true
+      ? RouteBuilderObject<T, TMap> & { $: () => string }
+      : () => string
     : T extends object
       ? RouteBuilderObject<T, TMap>
       : never;
