@@ -9,13 +9,13 @@
     "type-safe",
     "app-router"
   ],
-  "homepage": "https://github.com/hugs7/nextroute#readme",
+  "homepage": "https://github.com/hugs7/next-typed-paths#readme",
   "bugs": {
-    "url": "https://github.com/hugs7/nextroute/issues"
+    "url": "https://github.com/hugs7/next-typed-paths/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hugs7/nextroute.git"
+    "url": "git+https://github.com/hugs7/next-typed-paths.git"
   },
   "license": "MIT",
   "author": "Hugo Burton",
