@@ -7,7 +7,7 @@ const config: RouteConfig = {
   basePrefix: "/api",
   paramTypeMap: {
     type: "RouteParamTypeMap",
-    from: "./params",
+    from: "../params",
   },
 };
 
