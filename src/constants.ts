@@ -2,8 +2,16 @@
  * Constants used throughout the package
  */
 
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+import { readFileSync } from "fs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
+const packageVersion = packageJson.version;
+
 export const PACKAGE_NAME = "nextroutes";
-export const PACKAGE_VERSION = "0.1.0";
+export const PACKAGE_VERSION = packageVersion;
 export const CLI_NAME = PACKAGE_NAME;
 export const CONFIG_MODULE_NAME = "routes";
 export const CONFIG_FILE_NAME = "routes.config";
