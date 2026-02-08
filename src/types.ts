@@ -30,11 +30,13 @@ export type RouteBuilder<T, TMap = {}> = T extends { $param: infer P extends str
       ? RouteBuilderObject<T, TMap>
       : never;
 
+/**
+ * Special keys used in route structure for metadata
+ */
+export type MetadataKey = "$param" | "$route";
+
 export type RouteBuilderObject<T, TMap = {}> = {
-  [K in keyof T as K extends "$param" | "$route" | "$segment" ? never : CamelCase<K & string>]: RouteBuilder<
-    T[K],
-    TMap
-  >;
+  [K in keyof T as K extends MetadataKey ? never : CamelCase<K & string>]: RouteBuilder<T[K], TMap>;
 };
 
 /**

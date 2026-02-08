@@ -4,7 +4,7 @@
 
 import { camelCase } from "lodash-es";
 
-import type { RouteBuilderObject } from "./types";
+import type { MetadataKey, RouteBuilderObject } from "./types";
 
 /**
  * Build a typed API route path from segments
@@ -13,6 +13,15 @@ export const buildRoutePath = (segments: (string | number)[], basePrefix: string
   const path = segments.map((s) => String(s)).join("/");
   return [basePrefix, path].filter(Boolean).join("/");
 };
+
+/**
+ * Determine if a key is a metadata key used in route structure
+ *
+ * @param key - The key to check
+ * @returns True if the key is a metadata key, false otherwise
+ */
+const isMetadataKey = (key: string): key is MetadataKey =>
+  (["$param", "$route"] satisfies MetadataKey[]).includes(key as MetadataKey);
 
 /**
  * Recursively build route builder functions from route structure
@@ -26,7 +35,7 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
 
   for (const [key, value] of Object.entries(structure)) {
     // Skip metadata keys
-    if (key === "$param" || key === "$route") continue;
+    if (isMetadataKey(key)) continue;
 
     // Transform key to camelCase for builder property, use original for URL
     const builderKey = camelCase(key);
