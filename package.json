@@ -39,7 +39,9 @@
   "scripts": {
     "build": "vite build",
     "prepublishOnly": "npm run build",
-    "test": "vitest"
+    "test": "vitest",
+    "test:e2e": "npx tsx src/cli.ts generate --config ./test/routes.config.ts",
+    "test:e2e:watch": "npm run test:e2e -- --watch"
   },
   "dependencies": {
     "chokidar": "^5.0.0",

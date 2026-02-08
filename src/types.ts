@@ -5,10 +5,15 @@
 // Utility type to convert kebab-case to camelCase
 type CamelCase<S extends string> = S extends `${infer First}-${infer Rest}`
   ? `${Lowercase<First>}${Capitalize<CamelCase<Rest>>}`
-  : Lowercase<S>;
+  : S;
+
+/**
+ * Special keys used in route structure for metadata
+ */
+export type MetadataKey = "$param" | "$route";
 
 // Helper to check if an object has non-metadata keys (children)
-export type HasChildren<T> = keyof Omit<T, "$param" | "$route"> extends never ? false : true;
+export type HasChildren<T> = keyof Omit<T, MetadataKey> extends never ? false : true;
 
 // Get the type for a specific parameter from the type map
 export type GetParamType<P extends string, TMap = {}> = P extends keyof TMap ? TMap[P] : string;
@@ -29,11 +34,6 @@ export type RouteBuilder<T, TMap = {}> = T extends { $param: infer P extends str
     : T extends object
       ? RouteBuilderObject<T, TMap>
       : never;
-
-/**
- * Special keys used in route structure for metadata
- */
-export type MetadataKey = "$param" | "$route";
 
 export type RouteBuilderObject<T, TMap = {}> = {
   [K in keyof T as K extends MetadataKey ? never : CamelCase<K & string>]: RouteBuilder<T[K], TMap>;

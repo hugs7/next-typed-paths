@@ -4,8 +4,8 @@
 
 import { cosmiconfig } from "cosmiconfig";
 
+import { CONFIG_MODULE_NAME, DEFAULT_BASE_PREFIX, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "./constants";
 import { RouteConfig } from "./types";
-import { DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE, DEFAULT_BASE_PREFIX, CONFIG_MODULE_NAME } from "./constants";
 
 const explorer = cosmiconfig(CONFIG_MODULE_NAME);
 

@@ -4,7 +4,6 @@
 
 import { existsSync } from "fs";
 import { readdir } from "fs/promises";
-import { camelCase } from "lodash-es";
 import { join, resolve } from "path";
 
 import { PAGE_FILE_NAME, ROUTE_FILE_EXTENSIONS, ROUTE_FILE_NAME } from "./constants";
