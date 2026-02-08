@@ -58,8 +58,9 @@ export const generateRouteFile = (structure: RouteNode, config: RouteConfig): st
   const basePrefix = config.basePrefix ?? "";
   const customImports = config.imports?.join("\n") ?? "";
   const routesName = config.routesName ?? defaultConfig.routesName;
-  const structureName = routesName.toUpperCase();
+  const compiledRoutesName = routesName.toUpperCase();
   const typeName = pascalCase(routesName);
+  const structureName = [typeName, "Structure"].join("");
 
   // Generate paramTypeMap import or default to empty object
   const paramTypeMapImport = config.paramTypeMap
@@ -85,6 +86,6 @@ ${structureCode}
 export type ${typeName} = RouteBuilderObject<typeof ${structureName}, ${paramTypeMapType}>;
 
 // Route builder instance
-export const ${routesName} = createRouteBuilder<typeof ${structureName}, ${paramTypeMapType}>(${structureName}, [], "${basePrefix}");
+export const ${compiledRoutesName} = createRouteBuilder<typeof ${structureName}, ${paramTypeMapType}>(${structureName}, [], "${basePrefix}");
 `;
 };
