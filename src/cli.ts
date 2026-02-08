@@ -43,7 +43,7 @@ const generateRoutes = async (config: RouteConfig): Promise<void> => {
     const structure = await generateRouteStructure(config.input);
 
     // Generate TypeScript code
-    const code = generateRouteFile(structure, config);
+    const code = await generateRouteFile(structure, config);
 
     // Ensure output directory exists
     const outputDir = dirname(config.output);

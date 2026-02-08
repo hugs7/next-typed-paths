@@ -2,9 +2,10 @@
  * Constants used throughout the package
  */
 
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { Options as PrettierOptions } from "prettier";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
@@ -24,3 +25,12 @@ export const WATCH_DEBOUNCE_MS = 300;
 export const ROUTE_FILE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 export const ROUTE_FILE_NAME = "route";
 export const PAGE_FILE_NAME = "page";
+
+export const PRETTIER_DEFAULT_CONFIG: PrettierOptions = {
+  parser: "typescript",
+  semi: true,
+  singleQuote: false,
+  trailingComma: "es5",
+  printWidth: 100,
+  tabWidth: 2,
+};
