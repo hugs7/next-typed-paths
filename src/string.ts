@@ -1,24 +1,14 @@
+import { camelCase } from "lodash-es";
+
 /**
  * Format a string to PascalCase
  *
  * @param str - The input string to format
  * @returns The formatted string in PascalCase
  */
-export const pascalCase = (str: string): string =>
-  str
-    .split(/[-_ ]+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join("");
-
-/**
- * Format a string to camelCase
- *
- * @param str - The input string to format
- * @returns The formatted string in camelCase
- */
-export const camelCase = (str: string): string => {
-  const pascal = pascalCase(str);
-  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
+export const pascalCase = (str: string): string => {
+  const camel = camelCase(str);
+  return camel.charAt(0).toUpperCase() + camel.slice(1);
 };
 
 /**

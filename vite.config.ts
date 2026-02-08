@@ -27,6 +27,7 @@ export default defineConfig({
         "cosmiconfig",
         "fs",
         "fs/promises",
+        "lodash-es",
         "path",
         "prettier",
         "ts-morph",

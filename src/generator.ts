@@ -2,12 +2,13 @@
  * Code generator for route files
  */
 
-import { Project, VariableDeclarationKind, WriterFunction, Writers } from "ts-morph";
+import { camelCase } from "lodash-es";
 import prettier from "prettier";
+import { Project, VariableDeclarationKind, WriterFunction, Writers } from "ts-morph";
 
 import { defaultConfig } from "./config";
 import { PACKAGE_NAME, PRETTIER_DEFAULT_CONFIG } from "./constants";
-import { camelCase, pascalCase, wrapDoubleQuotes } from "./string";
+import { pascalCase, wrapDoubleQuotes } from "./string";
 import { RouteConfig, RouteNode } from "./types";
 
 /**
