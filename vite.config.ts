@@ -12,6 +12,11 @@ export default defineConfig({
       exclude: ["src/**/*.test.ts"],
     }),
   ],
+  resolve: {
+    alias: {
+      "next-typed-paths": resolve(__dirname, "src/index.ts"),
+    },
+  },
   build: {
     lib: {
       entry: {
