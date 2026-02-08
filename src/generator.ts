@@ -4,7 +4,7 @@
 
 import { defaultConfig } from "./config";
 import { PACKAGE_NAME } from "./constants";
-import { pascalCase } from "./string";
+import { pascalCase, wrapDoubleQuotes } from "./string";
 import { RouteConfig, RouteNode } from "./types";
 
 /**
@@ -23,7 +23,7 @@ const generateStructureCode = (structure: RouteNode, indent: number = 2): string
   for (const [key, value] of sortedEntries) {
     // Check if key needs to be quoted (contains special characters)
     const needsQuotes = /[^a-zA-Z0-9_$]/.test(key);
-    const quotedKey = needsQuotes ? `"${key}"` : key;
+    const quotedKey = needsQuotes ? wrapDoubleQuotes(key) : key;
 
     if (typeof value === "object" && value !== null) {
       const childLines = generateStructureCode(value, indent + 2);
@@ -35,7 +35,7 @@ const generateStructureCode = (structure: RouteNode, indent: number = 2): string
     } else if (typeof value === "boolean") {
       lines.push(`${indentStr}${quotedKey}: ${value},`);
     } else if (typeof value === "string") {
-      lines.push(`${indentStr}${quotedKey}: "${value}",`);
+      lines.push(`${indentStr}${quotedKey}: ${wrapDoubleQuotes(value)},`);
     }
   }
 
