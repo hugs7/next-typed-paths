@@ -1,5 +1,11 @@
 # Next Typed Paths
 
+[![npm version](https://img.shields.io/npm/v/next-typed-paths.svg?style=flat-square)](https://www.npmjs.com/package/next-typed-paths)
+[![npm downloads](https://img.shields.io/npm/dm/next-typed-paths.svg?style=flat-square)](https://www.npmjs.com/package/next-typed-paths)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/next-typed-paths?style=flat-square)](https://bundlephobia.com/package/next-typed-paths)
+[![license](https://img.shields.io/npm/l/next-typed-paths.svg?style=flat-square)](https://github.com/hugs7/next-typed-paths/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+
 Type-safe Next.js App Router route builder with automatic generation from your file system.
 
 ## Features
