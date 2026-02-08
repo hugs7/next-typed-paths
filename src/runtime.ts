@@ -38,7 +38,8 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
     if (isMetadataKey(key)) continue;
 
     // Transform key to camelCase for builder property, use original for URL
-    const builderKey = camelCase(key);
+    // Preserve $ prefix for parameter keys
+    const builderKey = key.startsWith('$') ? '$' + camelCase(key.slice(1)) : camelCase(key);
     const currentPath = [...basePath, key];
 
     if (typeof value === "object") {

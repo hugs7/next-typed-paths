@@ -37,7 +37,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build",
+    "tsc": "tsc -p tsconfig.lib.json",
+    "build": "npm run tsc && vite build",
     "prepublishOnly": "npm run build",
     "test": "vitest",
     "test:e2e": "npx tsx src/cli.ts generate --config ./test/routes.config.ts",

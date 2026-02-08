@@ -1,6 +1,6 @@
 # Test Directory
 
-This directory contains a test setup for next-typed-paths.
+This directory contains an e2e test setup for next-typed-paths.
 
 ## Structure
 

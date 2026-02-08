@@ -1,5 +1,7 @@
+/// <reference types="vitest/config" />
+
+import { join, resolve } from "path";
 import { defineConfig } from "vite";
-import { resolve } from "path";
 import dts from "vite-plugin-dts";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -7,10 +9,16 @@ export default defineConfig({
   plugins: [
     tsconfigPaths(),
     dts({
+      tsconfigPath: join(__dirname, "tsconfig.lib.json"),
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts"],
     }),
   ],
+  resolve: {
+    alias: {
+      "next-typed-paths": resolve(__dirname, "src/index.ts"),
+    },
+  },
   build: {
     lib: {
       entry: {
@@ -37,5 +45,8 @@ export default defineConfig({
     },
     outDir: "dist",
     emptyOutDir: true,
+  },
+  test: {
+    globals: true,
   },
 });

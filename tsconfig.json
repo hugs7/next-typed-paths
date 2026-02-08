@@ -4,8 +4,7 @@
     "module": "ESNext",
     "lib": ["ES2022"],
     "moduleResolution": "bundler",
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "composite": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -16,6 +15,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": [],
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.spec.json" }]
 }
