@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import { join, resolve } from "path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
@@ -43,5 +45,8 @@ export default defineConfig({
     },
     outDir: "dist",
     emptyOutDir: true,
+  },
+  test: {
+    globals: true,
   },
 });
