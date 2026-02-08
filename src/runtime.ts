@@ -23,17 +23,19 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
   const builder = {} as RouteBuilderObject<T, TMap>;
 
   for (const [key, value] of Object.entries(structure)) {
-    // Skip metadata keys, but not route segment keys like $documentId
-    if (key === "$param" || key === "$route") continue;
+    // Skip metadata keys
+    if (key === "$param" || key === "$route" || key === "$segment") continue;
 
-    const currentPath = [...basePath, key];
+    // Use $segment if available (original hyphenated name), otherwise use key
+    const urlSegment = value?.$segment ?? key;
+    const currentPath = [...basePath, urlSegment];
 
     if (typeof value === "object") {
       const hasRoute = value.$route === true;
       const hasParam = "$param" in value;
 
       // Check if there are children (non-metadata keys)
-      const childKeys = Object.keys(value).filter((k) => k !== "$param" && k !== "$route");
+      const childKeys = Object.keys(value).filter((k) => !k.startsWith("$"));
       const hasChildren = childKeys.length > 0;
 
       if (hasParam) {

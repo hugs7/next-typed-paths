@@ -4,9 +4,10 @@
 
 import { existsSync } from "fs";
 import { readdir } from "fs/promises";
+import { camelCase } from "lodash-es";
 import { join, resolve } from "path";
 
-import { ROUTE_FILE_EXTENSIONS, ROUTE_FILE_NAME, PAGE_FILE_NAME } from "./constants";
+import { PAGE_FILE_NAME, ROUTE_FILE_EXTENSIONS, ROUTE_FILE_NAME } from "./constants";
 import { RouteNode } from "./types";
 
 /**
@@ -39,8 +40,20 @@ const extractParamName = (segment: string): string | null => {
  */
 const formatParamName = (paramName: string): string => {
   // Convert kebab-case to camelCase
-  const camelCase = paramName.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-  return `$${camelCase}`;
+  const camelCased = paramName.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  return `$${camelCased}`;
+};
+
+/**
+ * Transform static segment name to camelCase for TypeScript property access
+ * e.g., "theatre-list" -> "theatreList", "hyphened-route" -> "hyphenedRoute"
+ */
+const transformSegmentName = (segmentName: string): { key: string; original: string } => {
+  const camelCased = camelCase(segmentName);
+  return {
+    key: camelCased,
+    original: segmentName,
+  };
 };
 
 /**
@@ -77,9 +90,14 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
       childNode.$param = paramName;
       node[formattedName] = childNode;
     } else {
-      // Static segment
+      // Static segment - transform to camelCase
+      const { key, original } = transformSegmentName(entry.name);
       const childNode = await scanDirectory(entryPath, `${basePath}/${entry.name}`);
-      node[entry.name] = childNode;
+      // Store original name if it differs from the camelCase key
+      if (key !== original) {
+        childNode.$segment = original;
+      }
+      node[key] = childNode;
     }
   }
 

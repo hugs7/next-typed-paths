@@ -33,8 +33,12 @@ export type RouteBuilderObject<T, TMap = {}> = {
  * Route structure node
  */
 export interface RouteNode {
+  /** Parameter name for dynamic segments */
   $param?: string;
+  /** Whether this node has a route file */
   $route?: boolean;
+  /** Original file system segment name (for URL generation) */
+  $segment?: string;
   [key: string]: any;
 }
 
