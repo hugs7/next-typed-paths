@@ -15,7 +15,13 @@ export interface RouteConfig {
   output: string;
   /** Watch for changes and regenerate */
   watch?: boolean;
-  /** Base prefix for all routes (e.g., "/api") */
+  /**
+   * Base prefix for all routes
+   * Defaults to the input path relative to ./app.
+   * For example, if input is "./app/api", the default basePrefix will be "/api".
+   *
+   * As a fallback, "/" is used if the input path cannot be parsed.
+   */
   basePrefix?: string;
   /**
    * Parameter type map configuration

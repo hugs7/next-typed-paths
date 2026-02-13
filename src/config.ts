@@ -4,7 +4,7 @@
 
 import { cosmiconfig } from "cosmiconfig";
 
-import { CONFIG_MODULE_NAME, DEFAULT_BASE_PREFIX, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "./constants";
+import { CONFIG_MODULE_NAME, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "./constants";
 import { MaybeArray, RouteConfig } from "./types";
 import { ensureArray } from "./utils";
 
@@ -17,9 +17,30 @@ export const defaultConfig = {
   input: DEFAULT_INPUT_DIR,
   output: DEFAULT_OUTPUT_FILE,
   watch: false,
-  basePrefix: DEFAULT_BASE_PREFIX,
   routesName: "routes",
 } as const satisfies RouteConfig;
+
+/**
+ * Computes the default base prefix, relative to the input path.
+ * For example, if the input is "./app/api", the default base prefix will be "/api".
+ * If the input path cannot be parsed, it falls back to "/".
+ *
+ * @param config - The route configuration object
+ * @returns The computed default base prefix
+ */
+const computeDefaultBasePrefix = (config: RouteConfig): string => {
+  const inputParts = config.input.split("/").filter((part) => part && part !== ".");
+
+  if (inputParts.some((part) => part === "app")) {
+    const appIndex = inputParts.indexOf("app");
+    const inputRelativeToApp = inputParts.slice(appIndex + 1).join("/");
+
+    return `/${inputRelativeToApp}`;
+  }
+
+  // Fallback to "/" if we can't determine a relative path
+  return "/";
+};
 
 /**
  * Load configuration from file or use defaults
@@ -31,8 +52,9 @@ export const loadConfig = async (configPath?: string): Promise<RouteConfig[]> =>
     if (result && result.config) {
       const castedConfig = result.config as MaybeArray<RouteConfig>;
 
-      return ensureArray(castedConfig).map((config) => ({
+      return ensureArray(castedConfig).map(({ basePrefix, ...config }) => ({
         ...defaultConfig,
+        basePrefix: basePrefix ?? computeDefaultBasePrefix(config),
         ...config,
       }));
     }
