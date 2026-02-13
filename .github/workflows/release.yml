@@ -52,10 +52,22 @@ jobs:
               echo "should_publish=false" >> $GITHUB_OUTPUT
               exit 0
             fi
+            
+            # Check for breaking changes or feat commits for version bump type
+            if echo "$COMMITS" | grep -qE "^[a-f0-9]+ (BREAKING CHANGE|feat!:)"; then
+              VERSION_TYPE="major"
+            elif echo "$COMMITS" | grep -qE "^[a-f0-9]+ feat(\(.*\))?:"; then
+              VERSION_TYPE="minor"
+            else
+              VERSION_TYPE="patch"
+            fi
+          else
+            # No tags yet, default to patch
+            VERSION_TYPE="patch"
           fi
 
-          # Bump patch version by default
-          npm version patch -m "chore(release): v%s [skip ci]"
+          echo "Bumping $VERSION_TYPE version"
+          npm version $VERSION_TYPE -m "chore(release): v%s [skip ci]"
           echo "should_publish=true" >> $GITHUB_OUTPUT
 
       - name: Publish to NPM

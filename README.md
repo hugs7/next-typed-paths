@@ -53,7 +53,6 @@ const routeConfig: RouteConfig = {
   input: "./src/app/api",
   output: "./src/generated/routes.ts",
   watch: false,
-  basePrefix: "/api",
   paramTypeMap: {
     type: "RouteParamTypeMap",
     from: "../types/params",
@@ -74,6 +73,29 @@ export type RouteParamTypeMap = {
 };
 ```
 
+### Multiple Configurations
+
+You can export multiple configurations to generate routes for different parts of your application:
+
+```typescript
+import type { RouteConfig } from "next-typed-paths";
+
+const configs: RouteConfig[] = [
+  {
+    input: "./src/app/api",
+    output: "./src/generated/api-routes.ts",
+    routesName: "apiRoutes",
+  },
+  {
+    input: "./src/app/(dashboard)",
+    output: "./src/generated/dashboard-routes.ts",
+    routesName: "dashboardRoutes",
+  },
+];
+
+export default configs;
+```
+
 ### Configuration Options
 
 - **`input`** (`string`, required): The directory path to scan for route files. This should point to your Next.js API routes directory (e.g., `./src/app/api` or `./src/app`). You can use next-typed-paths for just your REST API backend or also for any page routes that return UI.
@@ -82,7 +104,12 @@ export type RouteParamTypeMap = {
 
 - **`watch`** (`boolean`, optional): When set to `true`, the generator will run in watch mode and automatically regenerate routes whenever files change in the input directory. Defaults to `false`.
 
-- **`basePrefix`** (`string`, optional): A prefix that will be prepended to all generated routes. For example, if your API routes are under `/api`, set this to `"/api"` so generated routes include this prefix. Defaults to `""`.
+- **`basePrefix`** (`string`, optional): A prefix that will be prepended to all generated routes. **Automatically computed** from the input path - everything after `/app/` becomes the prefix. For example:
+  - `input: "./app/api"` → `basePrefix: "/api"`
+  - `input: "./src/app/api/v2"` → `basePrefix: "/api/v2"`
+  - Falls back to `"/"` if the path cannot be parsed
+
+  You can manually override the automatic calculation by explicitly setting this value.
 
 - **`paramTypeMap`** (`object`, optional): Configuration for importing custom parameter types from your codebase. This allows you to define parameter types as a proper TypeScript interface with full IDE support, including complex types like unions, branded types, template literals, etc.
   - **`type`** (`string`): The name of the exported type/interface to import
