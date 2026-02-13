@@ -1,6 +1,6 @@
 {
   "name": "next-typed-paths",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "A realtime typesafe Next.Js route generation tool",
   "keywords": [
     "nextjs",
