@@ -5,6 +5,9 @@ import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const isCI = process.env.CI === String(true);
+console.log(`Building in ${isCI ? "CI" : "local"} mode...`);
+
 export default defineConfig({
   plugins: [
     tsconfigPaths(),
@@ -29,7 +32,7 @@ export default defineConfig({
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.js`,
     },
-    minify: process.env.CI === String(true),
+    minify: isCI,
     rollupOptions: {
       external: [
         "chokidar",
