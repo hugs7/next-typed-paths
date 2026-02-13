@@ -28,6 +28,7 @@ export default defineConfig({
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.js`,
     },
+    minify: process.env.CI === String(true),
     rollupOptions: {
       external: [
         "chokidar",
