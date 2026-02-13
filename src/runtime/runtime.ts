@@ -4,7 +4,7 @@
 
 import { camelCase } from "lodash-es";
 
-import type { MetadataKey, RouteBuilderObject } from "@/types";
+import type { MetadataKey, RouteBuilderObject } from "./types";
 
 /**
  * Build a typed API route path from segments

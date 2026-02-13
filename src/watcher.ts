@@ -5,8 +5,8 @@
 import { watch } from "chokidar";
 import { basename, relative, resolve } from "path";
 
-import { ROUTE_FILE_NAME, WATCH_DEBOUNCE_MS } from "./constants";
-import { RouteConfig } from "./types";
+import { ROUTE_FILE_NAME, WATCH_DEBOUNCE_MS } from "@/constants";
+import { RouteConfig } from "@/types";
 
 export type RegenerateCallback = () => Promise<void>;
 

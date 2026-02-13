@@ -6,12 +6,4 @@
  */
 
 export { buildRoutePath, createRouteBuilder } from "./runtime";
-export type {
-  GetParamType,
-  HasChildren,
-  MetadataKey,
-  ParamTypeMap,
-  RouteBuilder,
-  RouteBuilderObject,
-  RouteNode,
-} from "@/types";
+export * from "./types";
