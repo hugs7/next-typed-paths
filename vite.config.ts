@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 
+import { chmodSync } from "fs";
 import { join, resolve } from "path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
@@ -16,6 +17,24 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts"],
     }),
+    {
+      name: "make-cli-executable",
+      closeBundle() {
+        if (isCI) {
+          return;
+        }
+
+        const cliFiles = [resolve(__dirname, "dist/cli.js"), resolve(__dirname, "dist/cli.cjs")];
+        cliFiles.forEach((file) => {
+          try {
+            chmodSync(file, 0o755);
+            console.log(`✓ Made ${file.split("/").pop()} executable`);
+          } catch (err) {
+            console.warn(`Could not make ${file} executable:`, err);
+          }
+        });
+      },
+    },
   ],
   resolve: {
     alias: {
