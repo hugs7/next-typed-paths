@@ -6,8 +6,8 @@ import { existsSync } from "fs";
 import { readdir } from "fs/promises";
 import { join, resolve } from "path";
 
-import { PAGE_FILE_NAME, ROUTE_FILE_EXTENSIONS, ROUTE_FILE_NAME } from "./constants";
-import { RouteNode } from "./types";
+import { PAGE_FILE_NAME, ROUTE_FILE_EXTENSIONS, ROUTE_FILE_NAME } from "@/constants";
+import { RouteNode } from "@/runtime";
 
 /**
  * Check if a directory contains a route.ts or page.ts file

@@ -4,9 +4,10 @@
 
 import { cosmiconfig } from "cosmiconfig";
 
-import { CONFIG_MODULE_NAME, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "./constants";
-import { MaybeArray, RouteConfig } from "./types";
-import { ensureArray } from "./utils";
+import { CONFIG_MODULE_NAME, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "@/constants";
+import { MaybeArray } from "@/runtime";
+import { RouteConfig } from "@/types";
+import { ensureArray } from "@/utils";
 
 const explorer = cosmiconfig(CONFIG_MODULE_NAME);
 

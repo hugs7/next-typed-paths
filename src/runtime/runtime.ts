@@ -11,7 +11,9 @@ import type { MetadataKey, RouteBuilderObject } from "./types";
  */
 export const buildRoutePath = (segments: (string | number)[], basePrefix: string = ""): string => {
   const path = segments.map((s) => String(s)).join("/");
-  return [basePrefix, path].filter(Boolean).join("/");
+  const result = [basePrefix, path].filter(Boolean).join("/");
+  // Replace consecutive slashes with a single slash
+  return result.replace(/\/+/g, "/");
 };
 
 /**
@@ -39,7 +41,7 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
 
     // Transform key to camelCase for builder property, use original for URL
     // Preserve $ prefix for parameter keys
-    const builderKey = key.startsWith('$') ? '$' + camelCase(key.slice(1)) : camelCase(key);
+    const builderKey = key.startsWith("$") ? "$" + camelCase(key.slice(1)) : camelCase(key);
     const currentPath = [...basePath, key];
 
     if (typeof value === "object") {

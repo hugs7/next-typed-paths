@@ -6,10 +6,11 @@ import { camelCase, snakeCase } from "lodash-es";
 import prettier from "prettier";
 import { Project, VariableDeclarationKind, WriterFunction, Writers } from "ts-morph";
 
-import { defaultConfig } from "./config";
-import { PACKAGE_NAME, PRETTIER_DEFAULT_CONFIG } from "./constants";
-import { pascalCase, wrapDoubleQuotes } from "./string";
-import { RouteConfig, RouteNode } from "./types";
+import { defaultConfig } from "@/config";
+import { PACKAGE_NAME, PRETTIER_DEFAULT_CONFIG, RUNTIME_SUBMODULE } from "@/constants";
+import { RouteNode } from "@/runtime";
+import { pascalCase, wrapDoubleQuotes } from "@/string";
+import { RouteConfig } from "@/types";
 
 /**
  * Convert RouteNode structure to ts-morph object literal writer
@@ -69,7 +70,7 @@ export const generateRouteFile = async (structure: RouteNode, config: RouteConfi
 
   // Add runtime imports
   sourceFile.addImportDeclaration({
-    moduleSpecifier: PACKAGE_NAME,
+    moduleSpecifier: [PACKAGE_NAME, RUNTIME_SUBMODULE].join("/"),
     namedImports: ["createRouteBuilder", "RouteBuilderObject"],
   });
 

@@ -9,7 +9,7 @@ import { existsSync } from "fs";
 import { writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
-import { loadConfig, mergeConfig } from "./config";
+import { loadConfig, mergeConfig } from "@/config";
 import {
   CLI_NAME,
   CONFIG_FILE_NAME,
@@ -18,12 +18,12 @@ import {
   DEFAULT_OUTPUT_FILE,
   PACKAGE_NAME,
   PACKAGE_VERSION,
-} from "./constants";
-import { mkdirIfNotExists } from "./file";
-import { generateRouteFile } from "./generator";
-import { generateRouteStructure } from "./scanner";
-import { RouteConfig } from "./types";
-import { startWatcher } from "./watcher";
+} from "@/constants";
+import { mkdirIfNotExists } from "@/file";
+import { generateRouteFile } from "@/generator";
+import { generateRouteStructure } from "@/scanner";
+import { RouteConfig } from "@/types";
+import { startWatcher } from "@/watcher";
 
 const program = new Command();
 

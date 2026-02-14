@@ -12,6 +12,7 @@ const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), 
 const packageVersion = packageJson.version;
 
 export const PACKAGE_NAME = "next-typed-paths";
+export const RUNTIME_SUBMODULE = "runtime";
 export const PACKAGE_VERSION = packageVersion;
 export const CLI_NAME = PACKAGE_NAME;
 export const CONFIG_MODULE_NAME = "routes";
