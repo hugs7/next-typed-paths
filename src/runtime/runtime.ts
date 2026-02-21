@@ -58,10 +58,10 @@ const stripParens = (s: string) => s.replace(/[()]/g, "");
  * @returns The constructed builder key
  */
 const constructBuilderKey = (key: string): string => {
-  const isMetaKey = key.startsWith("$");
-  const rawForBuilder = isMetaKey ? key.slice(1) : key;
+  const isMeta = key.startsWith("$");
+  const rawForBuilder = isMeta ? key.slice(1) : key;
   const transformedKey = camelCase(stripParens(rawForBuilder));
-  return [isMetaKey && "$", transformedKey].filter(Boolean).join("");
+  return [isMeta && "$", transformedKey].filter(Boolean).join("");
 };
 
 /**
@@ -89,7 +89,7 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
     const hasParam = "$param" in value;
 
     // Check if there are children (non-metadata keys)
-    const childKeys = Object.keys(value).filter((k) => !k.startsWith("$"));
+    const childKeys = Object.keys(value).filter((k) => !isMetadataKey(k));
     const hasChildren = childKeys.length > 0;
 
     if (hasParam) {
