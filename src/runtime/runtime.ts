@@ -7,10 +7,26 @@ import { camelCase } from "lodash-es";
 import type { MetadataKey, RouteBuilderObject } from "./types";
 
 /**
+ * Check if a segment is a Next.js route group (e.g., (group))
+ *
+ * @param segment - The segment to check
+ * @returns True if the segment is a group segment, false otherwise
+ * @see https://nextjs.org/docs/app/getting-started/project-structure#route-groups-and-private-folders
+ */
+const isGroupSegment = (segment: string | number): boolean => {
+  if (typeof segment !== "string") return false;
+
+  return segment.startsWith("(") && segment.endsWith(")");
+};
+
+/**
  * Build a typed API route path from segments
  */
 export const buildRoutePath = (segments: (string | number)[], basePrefix: string = ""): string => {
-  const path = segments.map((s) => String(s)).join("/");
+  const path = segments
+    .filter((s) => !isGroupSegment(s))
+    .map((s) => String(s))
+    .join("/");
   const result = [basePrefix, path].filter(Boolean).join("/");
   // Replace consecutive slashes with a single slash
   return result.replace(/\/+/g, "/");
