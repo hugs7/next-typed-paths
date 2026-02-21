@@ -42,6 +42,29 @@ const isMetadataKey = (key: string): key is MetadataKey =>
   (["$param", "$route"] satisfies MetadataKey[]).includes(key as MetadataKey);
 
 /**
+ * Strip parentheses from a string (used for route group names in Next.js)
+ *
+ * @param s - The string to strip parentheses from
+ * @returns The input string with all parentheses removed
+ */
+const stripParens = (s: string) => s.replace(/[()]/g, "");
+
+/**
+ * Construct the builder key for a given route segment key,
+ * preserving $ prefix for parameters and converting to camelCase
+ * for builder properties.
+ *
+ * @param key - The route segment key
+ * @returns The constructed builder key
+ */
+const constructBuilderKey = (key: string): string => {
+  const isMetaKey = key.startsWith("$");
+  const rawForBuilder = isMetaKey ? key.slice(1) : key;
+  const transformedKey = camelCase(stripParens(rawForBuilder));
+  return [isMetaKey && "$", transformedKey].filter(Boolean).join("");
+};
+
+/**
  * Recursively build route builder functions from route structure
  */
 export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<string, never>>(
@@ -55,9 +78,7 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
     // Skip metadata keys
     if (isMetadataKey(key)) continue;
 
-    // Transform key to camelCase for builder property, use original for URL
-    // Preserve $ prefix for parameter keys
-    const builderKey = key.startsWith("$") ? "$" + camelCase(key.slice(1)) : camelCase(key);
+    const builderKey = constructBuilderKey(key);
     const currentPath = [...basePath, key];
 
     if (typeof value !== "object") {

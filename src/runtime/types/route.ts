@@ -2,7 +2,7 @@
  * Type definitions for route builder
  */
 
-import { CamelCase } from "./util";
+import { CamelCase, StripParentheses } from "./util";
 
 /**
  * Special keys used in route structure for metadata
@@ -33,7 +33,7 @@ export type RouteBuilder<T, TMap = {}> = T extends { $param: infer P extends str
       : never;
 
 export type RouteBuilderObject<T, TMap = {}> = {
-  [K in keyof T as K extends MetadataKey ? never : CamelCase<K & string>]: RouteBuilder<T[K], TMap>;
+  [K in keyof T as K extends MetadataKey ? never : CamelCase<StripParentheses<K & string>>]: RouteBuilder<T[K], TMap>;
 };
 
 /**
