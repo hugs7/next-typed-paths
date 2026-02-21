@@ -55,7 +55,7 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
 
   // Check if this directory itself has a route
   if (await hasRouteFile(dirPath)) {
-    node.$route = true;
+    node.$$route = true;
   }
 
   // Read directory contents
@@ -82,7 +82,7 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
       // Dynamic segment [paramName]
       const formattedName = formatParamName(paramName);
       const childNode = await scanDirectory(entryPath, relativePath);
-      childNode.$param = paramName;
+      childNode.$$param = paramName;
       node[formattedName] = childNode;
     } else {
       // Static segment - keep original name

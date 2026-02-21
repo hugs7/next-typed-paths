@@ -13,20 +13,20 @@ const routesStructure = {
   "(collections)": {
     posts: {
       $postId: {
-        $route: true,
-        $param: "postId",
+        $$route: true,
+        $$param: "postId",
       },
     },
     users: {
-      $route: true,
+      $$route: true,
       $userId: {
-        $route: true,
-        $param: "userId",
+        $$route: true,
+        $$param: "userId",
       },
     },
   },
   "hyphened-route": {
-    $route: true,
+    $$route: true,
   },
 } as const;
 

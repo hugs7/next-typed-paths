@@ -38,8 +38,8 @@ export const buildRoutePath = (segments: (string | number)[], basePrefix: string
  * @param key - The key to check
  * @returns True if the key is a metadata key, false otherwise
  */
-const isMetadataKey = (key: string): key is MetadataKey =>
-  (["$param", "$route"] satisfies MetadataKey[]).includes(key as MetadataKey);
+export const isMetadataKey = (key: string): key is MetadataKey =>
+  (["$$param", "$$route"] satisfies MetadataKey[]).includes(key as MetadataKey);
 
 /**
  * Strip parentheses from a string (used for route group names in Next.js)
@@ -58,10 +58,10 @@ const stripParens = (s: string) => s.replace(/[()]/g, "");
  * @returns The constructed builder key
  */
 const constructBuilderKey = (key: string): string => {
-  const isMeta = key.startsWith("$");
-  const rawForBuilder = isMeta ? key.slice(1) : key;
+  const isDynamicKey = key.startsWith("$");
+  const rawForBuilder = isDynamicKey ? key.slice(1) : key;
   const transformedKey = camelCase(stripParens(rawForBuilder));
-  return [isMeta && "$", transformedKey].filter(Boolean).join("");
+  return [isDynamicKey && "$", transformedKey].filter(Boolean).join("");
 };
 
 /**
@@ -78,15 +78,15 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
     // Skip metadata keys
     if (isMetadataKey(key)) continue;
 
-    const builderKey = constructBuilderKey(key);
-    const currentPath = [...basePath, key];
-
     if (typeof value !== "object") {
       continue;
     }
 
-    const hasRoute = value.$route === true;
-    const hasParam = "$param" in value;
+    const builderKey = constructBuilderKey(key);
+    const currentPath = [...basePath, key];
+
+    const hasRoute = value.$$route === true;
+    const hasParam = ("$$param" satisfies MetadataKey) in value;
 
     // Check if there are children (non-metadata keys)
     const childKeys = Object.keys(value).filter((k) => !isMetadataKey(k));
