@@ -10,21 +10,23 @@ import { type RouteParamTypeMap } from "../params";
 
 // Route structure definition
 const routesStructure = {
+  "(collections)": {
+    posts: {
+      $postId: {
+        $route: true,
+        $param: "postId",
+      },
+    },
+    users: {
+      $route: true,
+      $userId: {
+        $route: true,
+        $param: "userId",
+      },
+    },
+  },
   "hyphened-route": {
     $route: true,
-  },
-  posts: {
-    $postId: {
-      $route: true,
-      $param: "postId",
-    },
-  },
-  users: {
-    $route: true,
-    $userId: {
-      $route: true,
-      $param: "userId",
-    },
   },
 } as const;
 
