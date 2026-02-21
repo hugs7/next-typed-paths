@@ -26,15 +26,15 @@ const hasRouteFile = async (dirPath: string): Promise<boolean> => {
 };
 
 /**
- * Extract parameter name from Next.js dynamic segment [paramName]
+ * Extract route slug name from Next.js dynamic segment [slug]
  */
-const extractParamName = (segment: string): string | null => {
+const extractDynamicRouteSlug = (segment: string): string | undefined => {
   const match = segment.match(/^\[(.+)\]$/);
-  return match ? (match[1] ?? null) : null;
+  return match?.[1];
 };
 
 /**
- * Convert parameter name from Next.js format to camelCase with $ prefix
+ * Convert route slug name from Next.js format to camelCase with $ prefix
  * e.g., [userId] -> $userId, [user-id] -> $userId
  */
 const formatParamName = (paramName: string): string => {
@@ -55,7 +55,7 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
 
   // Check if this directory itself has a route
   if (await hasRouteFile(dirPath)) {
-    node.$route = true;
+    node.$$route = true;
   }
 
   // Read directory contents
@@ -76,17 +76,17 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
     }
 
     const entryPath = join(dirPath, dirName);
-    const paramName = extractParamName(dirName);
-
+    const relativePath = [basePath, dirName].join("/");
+    const paramName = extractDynamicRouteSlug(dirName);
     if (paramName) {
       // Dynamic segment [paramName]
       const formattedName = formatParamName(paramName);
-      const childNode = await scanDirectory(entryPath, `${basePath}/${dirName}`);
-      childNode.$param = paramName;
+      const childNode = await scanDirectory(entryPath, relativePath);
+      childNode.$$param = paramName;
       node[formattedName] = childNode;
     } else {
       // Static segment - keep original name
-      const childNode = await scanDirectory(entryPath, `${basePath}/${dirName}`);
+      const childNode = await scanDirectory(entryPath, relativePath);
       node[dirName] = childNode;
     }
   }

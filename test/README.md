@@ -9,13 +9,16 @@ test/
 ├── routes.config.ts          # Configuration with paramTypeMap
 ├── params.ts                 # Custom parameter type definitions
 ├── app/api/                  # Mock Next.js API routes
-|   ├── hyphened-route/
-│   │   └── route.ts
-│   ├── users/
-│   │   ├── route.ts
-│   │   └── [userId]/route.ts
-│   └── posts/
-│       └── [postId]/route.ts
+|   ├── (collections)/        # Group routes are retained in structure but ignored in constructed paths
+│   │   │── posts/
+│   │   │   └── [postId]/route.ts
+│   │   └── users/
+│   │       ├── [userId]/route.ts
+│   │       └── route.ts
+|   └── hyphened-route/
+│       │── _private/         # Private routes are ignored
+│       │   └── route.ts
+│       └── route.ts
 └── generated/                # Output directory (generated)
 ```
 

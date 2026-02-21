@@ -9,6 +9,7 @@ import { Project, VariableDeclarationKind, WriterFunction, Writers } from "ts-mo
 import { defaultConfig } from "@/config";
 import { PACKAGE_NAME, PRETTIER_DEFAULT_CONFIG, RUNTIME_SUBMODULE } from "@/constants";
 import { RouteNode } from "@/runtime";
+import { isMetadataKey } from "@/runtime/runtime";
 import { pascalCase, wrapDoubleQuotes } from "@/string";
 import { RouteConfig } from "@/types";
 
@@ -19,9 +20,9 @@ const createObjectWriter = (structure: RouteNode): WriterFunction => {
   return Writers.object(
     Object.entries(structure)
       .sort(([a], [b]) => {
-        // Sort to put $param and $route first
-        const aOrder = a.startsWith("$") ? 0 : 1;
-        const bOrder = b.startsWith("$") ? 0 : 1;
+        // Sort to put metadata keys first
+        const aOrder = isMetadataKey(a) ? 0 : 1;
+        const bOrder = isMetadataKey(b) ? 0 : 1;
         return aOrder - bOrder;
       })
       .reduce(
