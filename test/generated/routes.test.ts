@@ -12,6 +12,7 @@ describe("Generated routes", () => {
     expect(typeof ROUTES.collections.users).toBe("object");
     expect(typeof ROUTES.collections.users.$userId).toBe("function");
     expect(ROUTES.collections.users.$userId("user_abc")).toBe("/api/users/user_abc");
+    expect(ROUTES.collections.users.$()).toBe("/api/users");
   });
 
   it("should not include private routes", () => {
