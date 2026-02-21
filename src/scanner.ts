@@ -67,19 +67,27 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
       continue;
     }
 
-    const entryPath = join(dirPath, entry.name);
-    const paramName = extractParamName(entry.name);
+    const dirName = entry.name;
+
+    // Skip private routes
+    // See https://nextjs.org/docs/app/getting-started/project-structure#route-groups-and-private-folders
+    if (dirName.startsWith("_")) {
+      continue;
+    }
+
+    const entryPath = join(dirPath, dirName);
+    const paramName = extractParamName(dirName);
 
     if (paramName) {
       // Dynamic segment [paramName]
       const formattedName = formatParamName(paramName);
-      const childNode = await scanDirectory(entryPath, `${basePath}/${entry.name}`);
+      const childNode = await scanDirectory(entryPath, `${basePath}/${dirName}`);
       childNode.$param = paramName;
       node[formattedName] = childNode;
     } else {
       // Static segment - keep original name
-      const childNode = await scanDirectory(entryPath, `${basePath}/${entry.name}`);
-      node[entry.name] = childNode;
+      const childNode = await scanDirectory(entryPath, `${basePath}/${dirName}`);
+      node[dirName] = childNode;
     }
   }
 
