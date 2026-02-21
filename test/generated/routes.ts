@@ -25,7 +25,6 @@ const routesStructure = {
       $route: true,
       $param: "userId",
     },
-    userId_copy: {},
   },
 } as const;
 
@@ -34,6 +33,3 @@ export type Routes = RouteBuilderObject<typeof routesStructure, RouteParamTypeMa
 
 // Route builder instance
 export const ROUTES = createRouteBuilder<typeof routesStructure, RouteParamTypeMap>(routesStructure, [], "/api");
-
-ROUTES.users.$userId;
-ROUTES.posts.$postId;
