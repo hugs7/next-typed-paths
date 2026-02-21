@@ -76,16 +76,17 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
     }
 
     const entryPath = join(dirPath, dirName);
+    const relativePath = [basePath, dirName].join("/");
     const paramName = extractDynamicRouteSlug(dirName);
     if (paramName) {
       // Dynamic segment [paramName]
       const formattedName = formatParamName(paramName);
-      const childNode = await scanDirectory(entryPath, `${basePath}/${dirName}`);
+      const childNode = await scanDirectory(entryPath, relativePath);
       childNode.$param = paramName;
       node[formattedName] = childNode;
     } else {
       // Static segment - keep original name
-      const childNode = await scanDirectory(entryPath, `${basePath}/${dirName}`);
+      const childNode = await scanDirectory(entryPath, relativePath);
       node[dirName] = childNode;
     }
   }
