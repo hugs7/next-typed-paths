@@ -44,48 +44,50 @@ export const createRouteBuilder = <T extends Record<string, any>, TMap = Record<
     const builderKey = key.startsWith("$") ? "$" + camelCase(key.slice(1)) : camelCase(key);
     const currentPath = [...basePath, key];
 
-    if (typeof value === "object") {
-      const hasRoute = value.$route === true;
-      const hasParam = "$param" in value;
+    if (typeof value !== "object") {
+      continue;
+    }
 
-      // Check if there are children (non-metadata keys)
-      const childKeys = Object.keys(value).filter((k) => !k.startsWith("$"));
-      const hasChildren = childKeys.length > 0;
+    const hasRoute = value.$route === true;
+    const hasParam = "$param" in value;
 
-      if (hasParam) {
-        // This level has a parameter
-        builder[builderKey] = (param: string | number) => {
-          const paramPath = [...currentPath.slice(0, -1), param];
+    // Check if there are children (non-metadata keys)
+    const childKeys = Object.keys(value).filter((k) => !k.startsWith("$"));
+    const hasChildren = childKeys.length > 0;
 
-          if (hasChildren) {
-            // Has children, build them with the parameter in the path
-            const children = createRouteBuilder(value, paramPath, basePrefix);
+    if (hasParam) {
+      // This level has a parameter
+      builder[builderKey] = (param: string | number) => {
+        const paramPath = [...currentPath.slice(0, -1), param];
 
-            // If this level is also a route, add a $ method
-            if (hasRoute) {
-              Object.assign(children, { $: () => buildRoutePath(paramPath, basePrefix) });
-            }
+        if (hasChildren) {
+          // Has children, build them with the parameter in the path
+          const children = createRouteBuilder(value, paramPath, basePrefix);
 
-            return children;
-          } else if (hasRoute) {
-            // Leaf route with parameter
-            return buildRoutePath(paramPath, basePrefix);
+          // If this level is also a route, add a $ method
+          if (hasRoute) {
+            Object.assign(children, { $: () => buildRoutePath(paramPath, basePrefix) });
           }
 
+          return children;
+        } else if (hasRoute) {
+          // Leaf route with parameter
           return buildRoutePath(paramPath, basePrefix);
-        };
-      } else if (hasRoute && !hasChildren) {
-        // Leaf route with no children or params
-        builder[builderKey] = () => buildRoutePath(currentPath, basePrefix);
-      } else {
-        // Has children, recurse
-        const children = createRouteBuilder(value, currentPath, basePrefix);
-        if (hasRoute) {
-          // Also a route itself
-          Object.assign(children, { $: () => buildRoutePath(currentPath, basePrefix) });
         }
-        builder[builderKey] = children;
+
+        return buildRoutePath(paramPath, basePrefix);
+      };
+    } else if (hasRoute && !hasChildren) {
+      // Leaf route with no children or params
+      builder[builderKey] = () => buildRoutePath(currentPath, basePrefix);
+    } else {
+      // Has children, recurse
+      const children = createRouteBuilder(value, currentPath, basePrefix);
+      if (hasRoute) {
+        // Also a route itself
+        Object.assign(children, { $: () => buildRoutePath(currentPath, basePrefix) });
       }
+      builder[builderKey] = children;
     }
   }
 
