@@ -26,15 +26,15 @@ const hasRouteFile = async (dirPath: string): Promise<boolean> => {
 };
 
 /**
- * Extract parameter name from Next.js dynamic segment [paramName]
+ * Extract route slug name from Next.js dynamic segment [slug]
  */
-const extractParamName = (segment: string): string | null => {
+const extractDynamicRouteSlug = (segment: string): string | undefined => {
   const match = segment.match(/^\[(.+)\]$/);
-  return match ? (match[1] ?? null) : null;
+  return match?.[1];
 };
 
 /**
- * Convert parameter name from Next.js format to camelCase with $ prefix
+ * Convert route slug name from Next.js format to camelCase with $ prefix
  * e.g., [userId] -> $userId, [user-id] -> $userId
  */
 const formatParamName = (paramName: string): string => {
@@ -76,8 +76,7 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
     }
 
     const entryPath = join(dirPath, dirName);
-    const paramName = extractParamName(dirName);
-
+    const paramName = extractDynamicRouteSlug(dirName);
     if (paramName) {
       // Dynamic segment [paramName]
       const formattedName = formatParamName(paramName);
