@@ -5,12 +5,16 @@ describe("Generated routes", () => {
     expect(typeof ROUTES.hyphenedRoute).toBe("function");
     expect(ROUTES.hyphenedRoute()).toBe("/api/hyphened-route");
 
-    expect(typeof ROUTES.posts).toBe("object");
-    expect(typeof ROUTES.posts.$postId).toBe("function");
-    expect(ROUTES.posts.$postId(123)).toBe("/api/posts/123");
+    expect(typeof ROUTES.collections.posts).toBe("object");
+    expect(typeof ROUTES.collections.posts.$postId).toBe("function");
+    expect(ROUTES.collections.posts.$postId(123)).toBe("/api/posts/123");
 
-    expect(typeof ROUTES.users).toBe("object");
-    expect(typeof ROUTES.users.$userId).toBe("function");
-    expect(ROUTES.users.$userId("user_abc")).toBe("/api/users/user_abc");
+    expect(typeof ROUTES.collections.users).toBe("object");
+    expect(typeof ROUTES.collections.users.$userId).toBe("function");
+    expect(ROUTES.collections.users.$userId("user_abc")).toBe("/api/users/user_abc");
+  });
+
+  it("should not include private routes", () => {
+    expect(ROUTES.hyphenedRoute).not.toHaveProperty("_private");
   });
 });

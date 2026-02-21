@@ -10,22 +10,23 @@ import { type RouteParamTypeMap } from "../params";
 
 // Route structure definition
 const routesStructure = {
+  "(collections)": {
+    posts: {
+      $postId: {
+        $$route: true,
+        $$param: "postId",
+      },
+    },
+    users: {
+      $$route: true,
+      $userId: {
+        $$route: true,
+        $$param: "userId",
+      },
+    },
+  },
   "hyphened-route": {
-    $route: true,
-  },
-  posts: {
-    $postId: {
-      $route: true,
-      $param: "postId",
-    },
-  },
-  users: {
-    $route: true,
-    $userId: {
-      $route: true,
-      $param: "userId",
-    },
-    userId_copy: {},
+    $$route: true,
   },
 } as const;
 
@@ -34,6 +35,3 @@ export type Routes = RouteBuilderObject<typeof routesStructure, RouteParamTypeMa
 
 // Route builder instance
 export const ROUTES = createRouteBuilder<typeof routesStructure, RouteParamTypeMap>(routesStructure, [], "/api");
-
-ROUTES.users.$userId;
-ROUTES.posts.$postId;
