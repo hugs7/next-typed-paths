@@ -59,21 +59,27 @@ export const scanDirectory = async (dirPath: string, basePath: string = ""): Pro
   }
 
   // Read directory contents
-  const entries = await readdir(dirPath, { withFileTypes: true });
+  const entries = await readdir(dirPath, { withFileTypes: true }).then((entries) => {
+    const filtered = entries
+      .filter((entry) => entry.isDirectory())
+      .filter((entry) => {
+        const dirName = entry.name;
+
+        // Skip private routes
+        // See https://nextjs.org/docs/app/getting-started/project-structure#route-groups-and-private-folders
+        const isPrivateRoute = dirName.startsWith("_");
+
+        return !(isPrivateRoute || dirName.startsWith(".") || dirName === "node_modules");
+      })
+      // readdir results in different order on different platforms.
+      // Hence, sort results for stable entry order.
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return filtered;
+  });
 
   for (const entry of entries) {
-    // Skip non-directories and special directories
-    if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules") {
-      continue;
-    }
-
     const dirName = entry.name;
-
-    // Skip private routes
-    // See https://nextjs.org/docs/app/getting-started/project-structure#route-groups-and-private-folders
-    if (dirName.startsWith("_")) {
-      continue;
-    }
 
     const entryPath = join(dirPath, dirName);
     const relativePath = [basePath, dirName].join("/");
