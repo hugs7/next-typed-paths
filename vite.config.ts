@@ -3,15 +3,13 @@
 import { chmodSync } from "fs";
 import { join, resolve } from "path";
 import { defineConfig } from "vite";
-import dts from "vite-plugin-dts";
-import tsconfigPaths from "vite-tsconfig-paths";
+import dts from "unplugin-dts/vite";
 
 const isCI = process.env.CI === String(true);
 console.log(`Building in ${isCI ? "CI" : "local"} mode...`);
 
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
     dts({
       tsconfigPath: join(__dirname, "tsconfig.lib.json"),
       include: ["src/**/*.ts"],
@@ -41,6 +39,7 @@ export default defineConfig({
       "next-typed-paths/runtime": resolve(__dirname, "src/runtime/index.ts"),
       "next-typed-paths": resolve(__dirname, "src/index.ts"),
     },
+    tsconfigPaths: true,
   },
   build: {
     lib: {
