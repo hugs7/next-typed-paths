@@ -23,6 +23,9 @@ const routesStructure = {
         $$route: true,
         $$param: "userId",
       },
+      permissions: {
+        $$route: true,
+      },
     },
   },
   "hyphened-route": {
