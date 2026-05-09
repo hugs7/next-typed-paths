@@ -2,8 +2,8 @@
 
 import { chmodSync } from "fs";
 import { join, resolve } from "path";
-import { defineConfig } from "vite";
 import dts from "unplugin-dts/vite";
+import { defineConfig } from "vite";
 
 const isCI = process.env.CI === String(true);
 console.log(`Building in ${isCI ? "CI" : "local"} mode...`);
