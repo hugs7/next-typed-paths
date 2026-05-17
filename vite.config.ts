@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 
-import { chmodSync } from "fs";
+import { chmodSync, readFileSync } from "fs";
 import { join, resolve } from "path";
 import dts from "unplugin-dts/vite";
 import { defineConfig } from "vite";
@@ -8,7 +8,13 @@ import { defineConfig } from "vite";
 const isCI = process.env.CI === String(true);
 console.log(`Building in ${isCI ? "CI" : "local"} mode...`);
 
+const packageJsonPath = resolve(__dirname, "package.json");
+const pkg = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as { version: string };
+
 export default defineConfig({
+  define: {
+    __PACKAGE_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     dts({
       tsconfigPath: join(__dirname, "tsconfig.lib.json"),

@@ -2,18 +2,11 @@
  * Constants used throughout the package
  */
 
-import { readFileSync } from "fs";
-import { dirname, join } from "path";
 import { Options as PrettierOptions } from "prettier";
-import { fileURLToPath } from "url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
-const packageVersion = packageJson.version;
 
 export const PACKAGE_NAME = "next-typed-paths";
 export const RUNTIME_SUBMODULE = "runtime";
-export const PACKAGE_VERSION = packageVersion;
+export const PACKAGE_VERSION = __PACKAGE_VERSION__;
 export const CLI_NAME = PACKAGE_NAME;
 export const CONFIG_MODULE_NAME = "routes";
 export const CONFIG_FILE_NAME = "routes.config";
