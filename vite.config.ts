@@ -7,6 +7,29 @@ import { defineConfig } from "vite";
 
 const fromRoot = (...paths: string[]) => resolve(import.meta.dirname, ...paths);
 
+// Single source of truth for the package's public modules. Entry names without
+// "index" (only cli) are internal and get no export alias.
+const entrySources = {
+  index: "src/index.ts",
+  cli: "src/cli.ts",
+  "axios/index": "src/axios/index.ts",
+  "client/index": "src/client/index.ts",
+  "contracts/index": "src/contracts/index.ts",
+  "next/index": "src/next/index.ts",
+  "runtime/index": "src/runtime/index.ts",
+};
+
+const entries = Object.fromEntries(Object.entries(entrySources).map(([name, src]) => [name, fromRoot(src)]));
+
+const aliases = Object.fromEntries(
+  Object.entries(entries)
+    .filter(([name]) => name !== "cli")
+    .map(([name, path]) => [
+      ["next-typed-paths", name !== "index" && name.replace(/\/index$/, "")].filter(Boolean).join("/"),
+      path,
+    ]),
+);
+
 const isCI = process.env.CI === String(true);
 console.log(`Building in ${isCI ? "CI" : "local"} mode...`);
 
@@ -42,27 +65,12 @@ export default defineConfig({
     },
   ],
   resolve: {
-    alias: {
-      "next-typed-paths/axios": fromRoot("src/axios/index.ts"),
-      "next-typed-paths/client": fromRoot("src/client/index.ts"),
-      "next-typed-paths/contracts": fromRoot("src/contracts/index.ts"),
-      "next-typed-paths/next": fromRoot("src/next/index.ts"),
-      "next-typed-paths/runtime": fromRoot("src/runtime/index.ts"),
-      "next-typed-paths": fromRoot("src/index.ts"),
-    },
+    alias: aliases,
     tsconfigPaths: true,
   },
   build: {
     lib: {
-      entry: {
-        index: fromRoot("src/index.ts"),
-        cli: fromRoot("src/cli.ts"),
-        "axios/index": fromRoot("src/axios/index.ts"),
-        "client/index": fromRoot("src/client/index.ts"),
-        "contracts/index": fromRoot("src/contracts/index.ts"),
-        "next/index": fromRoot("src/next/index.ts"),
-        "runtime/index": fromRoot("src/runtime/index.ts"),
-      },
+      entry: entries,
       formats: ["es", "cjs"],
       fileName: (format, entryName) => `${entryName}.${format === "es" ? "js" : "cjs"}`,
     },
