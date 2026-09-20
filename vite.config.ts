@@ -55,15 +55,17 @@ export default defineConfig({
           return;
         }
 
-        const cliFiles = [fromRoot("dist/cli.js"), fromRoot("dist/cli.cjs")];
-        cliFiles.forEach((file) => {
-          try {
-            chmodSync(file, 0o755);
-            console.log(`✓ Made ${file.split("/").pop()} executable`);
-          } catch (err) {
-            console.warn(`Could not make ${file} executable:`, err);
-          }
-        });
+        const cliFiles = ["cli.js", "cli.cjs"];
+        cliFiles
+          .map((file) => fromRoot(["dist", file].join("/")))
+          .forEach((file) => {
+            try {
+              chmodSync(file, 0o755);
+              console.log(`✓ Made ${file.split("/").pop()} executable`);
+            } catch (err) {
+              console.warn(`Could not make ${file} executable:`, err);
+            }
+          });
       },
     },
   ],
