@@ -6,8 +6,8 @@
  */
 
 import { createRouteBuilder, RouteBuilderObject } from "next-typed-paths/runtime";
-import { routeContract as routeContract0 } from "../app/api/(collections)/users/[userId]/route";
-import { routeContract as routeContract1 } from "../app/api/portable/route";
+import { routeContract as routeContractCollectionsUsersUserId } from "../app/api/(collections)/users/[userId]/route";
+import { routeContract as routeContractPortable } from "../app/api/portable/route";
 import { type RouteParamTypeMap } from "../params";
 
 // Route structure definition
@@ -24,7 +24,7 @@ const routesStructure = {
       $userId: {
         $$route: true,
         $$param: "userId",
-        $$contract: routeContract0,
+        $$contract: routeContractCollectionsUsersUserId,
       },
       permissions: {
         $$route: true,
@@ -51,7 +51,7 @@ const routesStructure = {
   },
   portable: {
     $$route: true,
-    $$contract: routeContract1,
+    $$contract: routeContractPortable,
   },
 } as const;
 

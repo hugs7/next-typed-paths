@@ -8,17 +8,17 @@
 import { createRouteBuilder, RouteBuilderObject } from "next-typed-paths/runtime";
 import { z } from "zod";
 
-const routeContract0GetRequestSchema = z.strictObject({
+const routeContractCollectionsUsersUserIdGetRequestSchema = z.strictObject({
   params: z.strictObject({ userId: z.literal("contract_user") }),
 });
-const routeContract0GetResponse200Schema = z.strictObject({ message: z.string() });
-const routeContract0PostRequestSchema = z.strictObject({
+const routeContractCollectionsUsersUserIdGetResponse200Schema = z.strictObject({ message: z.string() });
+const routeContractCollectionsUsersUserIdPostRequestSchema = z.strictObject({
   body: z.strictObject({ name: z.string() }),
   params: z.strictObject({ userId: z.literal("contract_user") }),
 });
-const routeContract0PostResponse201Schema = z.strictObject({ id: z.string(), name: z.string() });
-const routeContract1GetRequestSchema = z.strictObject({});
-const routeContract1GetResponse200Schema = z.strictObject({ portable: z.literal(true) });
+const routeContractCollectionsUsersUserIdPostResponse201Schema = z.strictObject({ id: z.string(), name: z.string() });
+const routeContractPortableGetRequestSchema = z.strictObject({});
+const routeContractPortableGetResponse200Schema = z.strictObject({ portable: z.literal(true) });
 // Route structure definition
 const externalRoutesStructure = {
   "(collections)": {
@@ -34,8 +34,14 @@ const externalRoutesStructure = {
         $$route: true,
         $$param: "userId",
         $$contract: {
-          GET: { request: routeContract0GetRequestSchema, responses: { 200: routeContract0GetResponse200Schema } },
-          POST: { request: routeContract0PostRequestSchema, responses: { 201: routeContract0PostResponse201Schema } },
+          GET: {
+            request: routeContractCollectionsUsersUserIdGetRequestSchema,
+            responses: { 200: routeContractCollectionsUsersUserIdGetResponse200Schema },
+          },
+          POST: {
+            request: routeContractCollectionsUsersUserIdPostRequestSchema,
+            responses: { 201: routeContractCollectionsUsersUserIdPostResponse201Schema },
+          },
         },
       },
       permissions: {
@@ -64,7 +70,10 @@ const externalRoutesStructure = {
   portable: {
     $$route: true,
     $$contract: {
-      GET: { request: routeContract1GetRequestSchema, responses: { 200: routeContract1GetResponse200Schema } },
+      GET: {
+        request: routeContractPortableGetRequestSchema,
+        responses: { 200: routeContractPortableGetResponse200Schema },
+      },
     },
   },
 } as const;
