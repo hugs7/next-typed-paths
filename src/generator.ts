@@ -2,6 +2,7 @@
  * Code generator for route files
  */
 
+import { createHash } from "crypto";
 import { camelCase, snakeCase } from "lodash-es";
 import { dirname, isAbsolute, relative, resolve, sep } from "path";
 import prettier from "prettier";
@@ -106,8 +107,13 @@ export const resolveContractMode = (config: RouteConfig): Exclude<ContractMode, 
   return outputFromRoot.startsWith("..") || isAbsolute(outputFromRoot) ? "external" : "internal";
 };
 
-const schemaName = (contractIndex: number, method: string, suffix: string): string =>
-  `routeContract${contractIndex}${pascalCase(method)}${suffix}Schema`;
+/**
+ * Stable identifier for a route contract, derived from its route path segments
+ * (e.g. ["(collections)", "users", "$userId"] → "routeContractCollectionsUsersUserId")
+ * so adding or removing sibling routes never renames an existing contract.
+ */
+const contractIdentifier = (segments: string[]): string =>
+  ["routeContract", ...segments.map((segment) => pascalCase(segment.replace(/[$()[\]]/g, "")))].join("");
 
 /**
  * Generate complete route file content using ts-morph
@@ -141,25 +147,35 @@ export const generateRouteFile = async (
     sourceFile.addImportDeclaration({ moduleSpecifier: "zod", namedImports: ["z"] });
   }
 
-  includedContracts.forEach((contract, contractIndex) => {
+  const usedIdentifiers = new Set<string>();
+  const identifierFor = (contract: RouteContractReference): string => {
+    const base = contractIdentifier(contract.segments);
+    if (!usedIdentifiers.has(base)) {
+      usedIdentifiers.add(base);
+      return base;
+    }
+    return `${base}${createHash("sha256").update(contract.sourcePath).digest("hex").slice(0, 6)}`;
+  };
+
+  includedContracts.forEach((contract) => {
+    const identifier = identifierFor(contract);
     if (contractMode === "internal") {
-      const alias = `routeContract${contractIndex}`;
       sourceFile.addImportDeclaration({
         moduleSpecifier: moduleSpecifier(config.output, contract.sourcePath),
-        namedImports: [{ alias, name: "routeContract" }],
+        namedImports: [{ alias: identifier, name: "routeContract" }],
       });
-      contractValues.push({ contractValue: alias, segments: contract.segments });
+      contractValues.push({ contractValue: identifier, segments: contract.segments });
       return;
     }
 
     const methods = contract.methods.map(({ method, requestSchema, responses }) => {
-      const requestName = schemaName(contractIndex, method, "Request");
+      const requestName = `${identifier}${pascalCase(method)}RequestSchema`;
       sourceFile.addVariableStatement({
         declarationKind: VariableDeclarationKind.Const,
         declarations: [{ initializer: requestSchema, name: requestName }],
       });
       const responseSchemas = responses.map(({ schema, status }) => {
-        const responseName = schemaName(contractIndex, method, `Response${status}`);
+        const responseName = `${identifier}${pascalCase(method)}Response${status}Schema`;
         sourceFile.addVariableStatement({
           declarationKind: VariableDeclarationKind.Const,
           declarations: [{ initializer: schema, name: responseName }],
