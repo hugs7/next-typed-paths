@@ -1,15 +1,16 @@
 /// <reference types="vitest/config" />
 
 import { chmodSync, readFileSync } from "fs";
-import { join, resolve } from "path";
+import { resolve } from "path";
 import dts from "unplugin-dts/vite";
 import { defineConfig } from "vite";
+
+const fromRoot = (...paths: string[]) => resolve(import.meta.dirname, ...paths);
 
 const isCI = process.env.CI === String(true);
 console.log(`Building in ${isCI ? "CI" : "local"} mode...`);
 
-const packageJsonPath = resolve(__dirname, "package.json");
-const pkg = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as { version: string };
+const pkg = JSON.parse(readFileSync(fromRoot("package.json"), "utf-8")) as { version: string };
 
 export default defineConfig({
   define: {
@@ -17,7 +18,7 @@ export default defineConfig({
   },
   plugins: [
     dts({
-      tsconfigPath: join(__dirname, "tsconfig.lib.json"),
+      tsconfigPath: fromRoot("tsconfig.lib.json"),
       include: ["src/**/*.ts"],
       exclude: ["src/**/*.test.ts"],
     }),
@@ -28,7 +29,7 @@ export default defineConfig({
           return;
         }
 
-        const cliFiles = [resolve(__dirname, "dist/cli.js"), resolve(__dirname, "dist/cli.cjs")];
+        const cliFiles = [fromRoot("dist/cli.js"), fromRoot("dist/cli.cjs")];
         cliFiles.forEach((file) => {
           try {
             chmodSync(file, 0o755);
@@ -42,25 +43,25 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "next-typed-paths/axios": resolve(__dirname, "src/axios/index.ts"),
-      "next-typed-paths/client": resolve(__dirname, "src/client/index.ts"),
-      "next-typed-paths/contracts": resolve(__dirname, "src/contracts/index.ts"),
-      "next-typed-paths/next": resolve(__dirname, "src/next/index.ts"),
-      "next-typed-paths/runtime": resolve(__dirname, "src/runtime/index.ts"),
-      "next-typed-paths": resolve(__dirname, "src/index.ts"),
+      "next-typed-paths/axios": fromRoot("src/axios/index.ts"),
+      "next-typed-paths/client": fromRoot("src/client/index.ts"),
+      "next-typed-paths/contracts": fromRoot("src/contracts/index.ts"),
+      "next-typed-paths/next": fromRoot("src/next/index.ts"),
+      "next-typed-paths/runtime": fromRoot("src/runtime/index.ts"),
+      "next-typed-paths": fromRoot("src/index.ts"),
     },
     tsconfigPaths: true,
   },
   build: {
     lib: {
       entry: {
-        index: resolve(__dirname, "src/index.ts"),
-        cli: resolve(__dirname, "src/cli.ts"),
-        "axios/index": resolve(__dirname, "src/axios/index.ts"),
-        "client/index": resolve(__dirname, "src/client/index.ts"),
-        "contracts/index": resolve(__dirname, "src/contracts/index.ts"),
-        "next/index": resolve(__dirname, "src/next/index.ts"),
-        "runtime/index": resolve(__dirname, "src/runtime/index.ts"),
+        index: fromRoot("src/index.ts"),
+        cli: fromRoot("src/cli.ts"),
+        "axios/index": fromRoot("src/axios/index.ts"),
+        "client/index": fromRoot("src/client/index.ts"),
+        "contracts/index": fromRoot("src/contracts/index.ts"),
+        "next/index": fromRoot("src/next/index.ts"),
+        "runtime/index": fromRoot("src/runtime/index.ts"),
       },
       formats: ["es", "cjs"],
       fileName: (format, entryName) => `${entryName}.${format === "es" ? "js" : "cjs"}`,
