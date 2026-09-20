@@ -24,6 +24,9 @@ const entries = Object.fromEntries(Object.entries(entrySources).map(([name, src]
 const aliases = Object.fromEntries(
   Object.entries(entries)
     .filter(([name]) => name !== "cli")
+    // Longest keys first: "next-typed-paths/runtime" must match before the
+    // bare "next-typed-paths" alias, which is a prefix of it.
+    .sort(([a], [b]) => b.length - a.length)
     .map(([name, path]) => [
       ["next-typed-paths", name !== "index" && name.replace(/\/index$/, "")].filter(Boolean).join("/"),
       path,
