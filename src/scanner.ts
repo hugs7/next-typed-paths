@@ -4,7 +4,7 @@
 
 import { existsSync } from "fs";
 import { readdir } from "fs/promises";
-import { camelCase } from "lodash-es";
+import { camelCase } from "es-toolkit";
 import { dirname, join, parse, resolve } from "path";
 import { Node, Project, SourceFile } from "ts-morph";
 
