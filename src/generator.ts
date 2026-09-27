@@ -3,7 +3,7 @@
  */
 
 import { createHash } from "crypto";
-import { camelCase, snakeCase } from "lodash-es";
+import { camelCase, snakeCase } from "es-toolkit";
 import { dirname, isAbsolute, relative, resolve, sep } from "path";
 import prettier from "prettier";
 import { Project, VariableDeclarationKind, WriterFunction, Writers } from "ts-morph";

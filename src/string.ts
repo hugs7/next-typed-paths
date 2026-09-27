@@ -1,4 +1,4 @@
-import { camelCase } from "lodash-es";
+import { camelCase } from "es-toolkit";
 
 /**
  * Format a string to PascalCase

@@ -2,7 +2,7 @@
  * Core route builder runtime
  */
 
-import { camelCase } from "lodash-es";
+import { camelCase } from "es-toolkit";
 
 import type { MetadataKey, RouteBuilderObject } from "./types";
 
