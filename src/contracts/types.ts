@@ -1,5 +1,18 @@
 import type { z } from "zod";
 
+/**
+ * Prettifies a type by removing any unnecessary intersections or unions, making it
+ * easier to read and understand.
+ *
+ * @template T - The type to be prettified.
+ * @example
+ * type ComplexType = { a: number; } & { b: string; };
+ * type PrettifiedType = Prettify<ComplexType>; // Result: { a: number; b: string; }
+ */
+type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};
+
 export type HttpMethod = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
 export type RouteRequestSchemas = {
@@ -22,10 +35,12 @@ export type RouteResponseDefinition = JsonResponseDefinition | NoContentResponse
 
 type ExclusiveRequestBody = { body?: never; formData?: z.ZodType } | { body?: z.ZodType; formData?: never };
 
-export type RouteMethodContract = Omit<RouteRequestSchemas, "body" | "formData"> &
-  ExclusiveRequestBody & {
-    responses: Record<number, RouteResponseDefinition>;
-  };
+export type RouteMethodContract = Prettify<
+  Omit<RouteRequestSchemas, "body" | "formData"> &
+    ExclusiveRequestBody & {
+      responses: Record<number, RouteResponseDefinition>;
+    }
+>;
 
 export type RouteContract = Partial<Record<HttpMethod, RouteMethodContract>>;
 
