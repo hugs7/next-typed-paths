@@ -1,5 +1,7 @@
 import type { z } from "zod";
 
+import { HTTP_METHODS } from "./http";
+
 /**
  * Prettifies a type by removing any unnecessary intersections or unions, making it
  * easier to read and understand.
@@ -13,7 +15,7 @@ type Prettify<T> = {
   [K in keyof T]: T[K];
 } & {};
 
-export type HttpMethod = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
+export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 export type RouteRequestSchemas = {
   body?: z.ZodType;
