@@ -210,7 +210,7 @@ pnpm routes:generate
 
 ## Configuration
 
-Create a `routes.config.ts` file in your project root:
+Create a `routes.config.ts` file in your project root (`routes.config.cts`/`.mts`/`.js`/`.cjs`/`.mjs` are detected too):
 
 ```typescript
 import type { RouteConfig } from "next-typed-paths";
