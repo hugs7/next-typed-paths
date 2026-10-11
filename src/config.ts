@@ -2,14 +2,21 @@
  * Configuration loader using cosmiconfig
  */
 
-import { cosmiconfig } from "cosmiconfig";
+import { cosmiconfig, getDefaultSearchPlaces } from "cosmiconfig";
 
-import { CONFIG_MODULE_NAME, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "@/constants";
+import { CONFIG_FILE_NAME, CONFIG_MODULE_NAME, DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_FILE } from "@/constants";
 import { MaybeArray } from "@/runtime";
 import { RouteConfig } from "@/types";
 import { ensureArray } from "@/utils";
 
-const explorer = cosmiconfig(CONFIG_MODULE_NAME);
+const explorer = cosmiconfig(CONFIG_MODULE_NAME, {
+  // cosmiconfig's defaults omit .mts/.cts, but Node natively type-strips them.
+  searchPlaces: [
+    ...getDefaultSearchPlaces(CONFIG_MODULE_NAME),
+    `${CONFIG_FILE_NAME}.cts`,
+    `${CONFIG_FILE_NAME}.mts`,
+  ],
+});
 
 /**
  * Default configuration
