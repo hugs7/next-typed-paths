@@ -6,7 +6,15 @@ import { createHash } from "crypto";
 import { camelCase, snakeCase } from "es-toolkit";
 import { dirname, isAbsolute, relative, resolve, sep } from "path";
 import prettier from "prettier";
-import { Project, VariableDeclarationKind, WriterFunction, Writers } from "ts-morph";
+import {
+  ImportDeclarationStructure,
+  Node,
+  OptionalKind,
+  Project,
+  VariableDeclarationKind,
+  WriterFunction,
+  Writers,
+} from "ts-morph";
 
 import { defaultConfig } from "@/config";
 import { PACKAGE_NAME, PRETTIER_DEFAULT_CONFIG, RUNTIME_SUBMODULE } from "@/constants";
@@ -15,6 +23,8 @@ import { isMetadataKey } from "@/runtime/runtime";
 import type { RouteContractReference } from "@/scanner";
 import { pascalCase, wrapDoubleQuotes } from "@/string";
 import { ContractMode, RouteConfig } from "@/types";
+
+type ImportStructure = OptionalKind<ImportDeclarationStructure>;
 
 /**
  * Convert RouteNode structure to ts-morph object literal writer
@@ -92,6 +102,38 @@ const moduleSpecifier = (outputPath: string, sourcePath: string): string => {
   return path.startsWith(".") ? path : `./${path}`;
 };
 
+const importCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+const compareText = (a: string, b: string): number => importCollator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
+
+/**
+ * Sort key matching eslint-plugin-simple-import-sort: parent directories sort before
+ * children, and `.` and `/` sort before other punctuation.
+ */
+const importSortKey = (specifier: string): string =>
+  specifier
+    .replace(/^[./]*\.$/, "$&/")
+    .replace(/^[./]*\/$/, "$&,")
+    .replace(/[./_-]/g, (char) => ({ ".": "_", "/": "-", _: ".", "-": "/" })[char] ?? char);
+
+const compareImports = (a: ImportStructure, b: ImportStructure): number =>
+  compareText(importSortKey(a.moduleSpecifier), importSortKey(b.moduleSpecifier)) ||
+  compareText(a.moduleSpecifier, b.moduleSpecifier) ||
+  Number(Boolean(b.isTypeOnly)) - Number(Boolean(a.isTypeOnly));
+
+/**
+ * Order imports the way common lint setups (e.g. simple-import-sort) expect:
+ * packages first, then relative imports, each group sorted and separated by a blank line.
+ */
+const groupImports = (imports: ImportStructure[]): ImportStructure[] => {
+  const isRelative = (structure: ImportStructure) => structure.moduleSpecifier.startsWith(".");
+  const packageImports = imports.filter((structure) => !isRelative(structure)).sort(compareImports);
+  const relativeImports = imports.filter(isRelative).sort(compareImports);
+  const [firstRelative, ...restRelative] = relativeImports;
+  if (!firstRelative || packageImports.length === 0) return [...packageImports, ...relativeImports];
+  return [...packageImports, { ...firstRelative, leadingTrivia: "\n" }, ...restRelative];
+};
+
 const inferNextProjectRoot = (input: string): string => {
   const resolvedInput = resolve(input);
   const segments = resolvedInput.split(sep);
@@ -136,15 +178,17 @@ export const generateRouteFile = async (
   const project = new Project({ useInMemoryFileSystem: true });
   const sourceFile = project.createSourceFile("routes.ts");
 
-  // Add runtime imports
-  sourceFile.addImportDeclaration({
-    moduleSpecifier: [PACKAGE_NAME, RUNTIME_SUBMODULE].join("/"),
-    namedImports: ["createRouteBuilder", "RouteBuilderObject"],
-  });
+  // Collect imports, then insert them grouped and sorted once all statements are generated
+  const imports: ImportStructure[] = [
+    {
+      moduleSpecifier: [PACKAGE_NAME, RUNTIME_SUBMODULE].join("/"),
+      namedImports: ["createRouteBuilder", "RouteBuilderObject"],
+    },
+  ];
 
   const contractValues: { contractValue: string; segments: string[] }[] = [];
   if (includedContracts.length > 0 && contractMode === "external") {
-    sourceFile.addImportDeclaration({ moduleSpecifier: "zod", namedImports: ["z"] });
+    imports.push({ moduleSpecifier: "zod", namedImports: ["z"] });
   }
 
   const usedIdentifiers = new Set<string>();
@@ -160,7 +204,7 @@ export const generateRouteFile = async (
   includedContracts.forEach((contract) => {
     const identifier = identifierFor(contract);
     if (contractMode === "internal") {
-      sourceFile.addImportDeclaration({
+      imports.push({
         moduleSpecifier: moduleSpecifier(config.output, contract.sourcePath),
         namedImports: [{ alias: identifier, name: "routeContract" }],
       });
@@ -189,16 +233,21 @@ export const generateRouteFile = async (
 
   // Add paramTypeMap import if configured
   if (config.paramTypeMap) {
-    sourceFile.addImportDeclaration({
+    imports.push({
       moduleSpecifier: config.paramTypeMap.from,
       namedImports: [{ name: config.paramTypeMap.type, isTypeOnly: true }],
     });
   }
 
-  // Add custom imports if provided
+  // Add custom imports if provided; import declarations are sorted with the generated ones
   if (config.imports && config.imports.length > 0) {
-    for (const customImport of config.imports) {
-      sourceFile.addStatements(customImport);
+    const customFile = project.createSourceFile("customImports.ts", config.imports.join("\n"));
+    for (const statement of customFile.getStatements()) {
+      if (Node.isImportDeclaration(statement)) {
+        imports.push(statement.getStructure());
+      } else {
+        sourceFile.addStatements(statement.getText());
+      }
     }
   }
 
@@ -237,6 +286,8 @@ export const generateRouteFile = async (
       },
     ],
   });
+
+  sourceFile.insertImportDeclarations(0, groupImports(imports));
 
   const code = sourceFile.getFullText();
 

@@ -109,3 +109,32 @@ describe("contract generation", () => {
     expect(code).not.toContain("/app/api/users/route");
   });
 });
+
+describe("import generation", () => {
+  it("groups package imports before relative imports, sorted as simple-import-sort expects", async () => {
+    const code = await generateRouteFile(
+      { users: { $$route: true } },
+      {
+        contractMode: "internal",
+        imports: ["import type { User } from '../types';", "import { a } from 'alpha';"],
+        input: "/project/src/app/api",
+        output: "/project/src/generated/routes.ts",
+        paramTypeMap: { from: "./params", type: "ParamMap" },
+      },
+      [{ methods: [], segments: ["users"], sourcePath: "/project/src/app/api/users/route.ts" }],
+    );
+
+    expect(code).toContain(
+      [
+        'import { a } from "alpha";',
+        'import { createRouteBuilder, RouteBuilderObject } from "next-typed-paths/runtime";',
+        "",
+        'import { routeContract as routeContractUsers } from "../app/api/users/route";',
+        'import type { User } from "../types";',
+        'import { type ParamMap } from "./params";',
+        "",
+        "// Route structure definition",
+      ].join("\n"),
+    );
+  });
+});
