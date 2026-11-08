@@ -1,4 +1,5 @@
 allowBuilds:
   esbuild: true
-minimumReleaseAgeExclude:
-  - prettier@3.9.10
+overrides:
+  # GHSA-g3hv-75wg-m249: @ts-morph/common wants ^10, but only calls minimatch(), which v11 keeps
+  "@ts-morph/common>minimatch": ^11.0.1
