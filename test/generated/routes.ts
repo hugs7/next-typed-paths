@@ -6,6 +6,7 @@
  */
 
 import { createRouteBuilder, RouteBuilderObject } from "next-typed-paths/runtime";
+
 import { routeContract as routeContractCollectionsUsersUserId } from "../app/api/(collections)/users/[userId]/route";
 import { routeContract as routeContractPortable } from "../app/api/portable/route";
 import { type RouteParamTypeMap } from "../params";
