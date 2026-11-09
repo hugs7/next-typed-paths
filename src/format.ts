@@ -20,10 +20,7 @@ require(workerData.prettierPath)
 export const formatCode = (code: string, options: Options): Promise<string> => {
   let worker: Worker;
   try {
-    // `import.meta` is unavailable in the CommonJS build, where `__filename` is defined instead.
-    const prettierPath = createRequire(typeof __filename === "string" ? __filename : import.meta.url).resolve(
-      "prettier",
-    );
+    const prettierPath = createRequire(import.meta.url).resolve("prettier");
     worker = new Worker(WORKER_SOURCE, { eval: true, workerData: { code, options, prettierPath } });
   } catch {
     return prettier.format(code, options);
