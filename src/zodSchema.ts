@@ -1,97 +1,141 @@
-import { Node, Type } from "ts-morph";
+import {
+  type Checker,
+  ObjectFlags,
+  SymbolFlags,
+  type Type,
+  TypeFlags,
+  type TypeReference,
+} from "@typescript/native/unstable/sync";
 
 const propertyKey = (name: string): string => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name));
 
 const literalSchema = (value: string | number | boolean): string => `z.literal(${JSON.stringify(value)})`;
 
-/** Converts a resolved TypeScript wire type into an equivalent generated Zod schema. */
-export const typeToZodSchema = (type: Type, location: Node): string => {
-  if (type.isString()) return "z.string()";
-  if (type.isNumber()) return "z.number()";
-  if (type.isBoolean()) return "z.boolean()";
-  if (type.isStringLiteral() || type.isNumberLiteral()) {
-    const value = type.getLiteralValue();
-    if (typeof value === "string") return literalSchema(value);
-    if (typeof value === "number") return literalSchema(value);
-  }
-  if (type.isBooleanLiteral()) return literalSchema(type.getText(location) === "true");
-  if (type.isNull()) return "z.null()";
-  if (type.isUndefined()) return "z.undefined()";
-  if (type.isNever()) return "z.never()";
-  if (type.isUnknown()) return "z.unknown()";
-  if (type.isAny()) throw new Error(`Cannot generate a Zod schema for any: ${type.getText(location)}`);
+export type ZodSchemaConverter = (type: Type) => string;
 
-  const text = type.getText(location);
-  const symbolName = type.getSymbol()?.getName() ?? type.getAliasSymbol()?.getName();
-  if (symbolName === "Date" || symbolName === "NativeDate" || text === "Date" || text === "NativeDate") {
-    return "z.date()";
-  }
-  if (symbolName === "ObjectId") return "z.string()";
+/**
+ * Creates a converter from resolved TypeScript wire types to equivalent generated Zod schemas.
+ * Conversions are memoized by type id, so types shared between contracts are converted once.
+ *
+ * @param checker - Checker of the program the types belong to
+ * @returns A function converting a type to Zod schema source
+ */
+export const createZodSchemaConverter = (checker: Checker): ZodSchemaConverter => {
+  const memo = new Map<number, string>();
+  const inProgress = new Set<number>();
 
-  if (type.isUnion()) {
-    const members = type.getUnionTypes();
-    if (members.length === 2 && members.some((member) => member.isUndefined())) {
-      const value = members.find((member) => !member.isUndefined());
-      if (value) return `${typeToZodSchema(value, location)}.optional()`;
+  const objectSchema = (type: Type): string => {
+    const properties = checker.getPropertiesOfType(type);
+    if (properties.length === 0) {
+      const stringIndex = checker
+        .getIndexInfosOfType(type)
+        .find(({ keyType }) => (keyType.flags & TypeFlags.String) !== 0);
+      if (stringIndex) return `z.record(z.string(), ${convert(stringIndex.valueType)})`;
     }
-    if (members.length === 2 && members.some((member) => member.isNull())) {
-      const value = members.find((member) => !member.isNull());
-      if (value) return `${typeToZodSchema(value, location)}.nullable()`;
-    }
-    return `z.union([${members.map((member) => typeToZodSchema(member, location)).join(", ")}])`;
-  }
 
-  if (type.isIntersection()) {
-    return type
-      .getIntersectionTypes()
-      .map((member) => typeToZodSchema(member, location))
-      .reduce((left, right) => `z.intersection(${left}, ${right})`);
-  }
-
-  if (type.isTuple()) {
-    return `z.tuple([${type
-      .getTupleElements()
-      .map((element) => typeToZodSchema(element, location))
-      .join(", ")}])`;
-  }
-
-  const arrayElement = type.getArrayElementType();
-  if (arrayElement) return `z.array(${typeToZodSchema(arrayElement, location)})`;
-
-  const stringIndexType = type.getStringIndexType();
-  const properties = type.getProperties();
-  if (stringIndexType && properties.length === 0) {
-    return `z.record(z.string(), ${typeToZodSchema(stringIndexType, location)})`;
-  }
-
-  if (type.isObject()) {
-    const fields = properties.map((property) => {
-      const declaration = property.getValueDeclaration() ?? property.getDeclarations()[0] ?? location;
-      const propertyType = property.getTypeAtLocation(declaration);
-      const definedTypes = propertyType.isUnion()
-        ? propertyType.getUnionTypes().filter((member) => !member.isUndefined())
-        : [propertyType];
-      const nonNullType =
-        definedTypes.length === 2 && definedTypes.some((member) => member.isNull())
-          ? definedTypes.find((member) => !member.isNull())
-          : undefined;
-
+    const propertyTypes = properties.length > 0 ? checker.getTypeOfSymbol(properties) : [];
+    const fields = properties.map((property, index) => {
+      const propertyType = propertyTypes[index];
+      if (!propertyType) throw new Error(`Cannot resolve the type of property ${property.name}`);
       try {
-        const definedSchema = nonNullType
-          ? `${typeToZodSchema(nonNullType, declaration)}.nullable()`
-          : definedTypes.length === 1 && definedTypes[0]
-            ? typeToZodSchema(definedTypes[0], declaration)
-            : `z.union([${definedTypes.map((member) => typeToZodSchema(member, declaration)).join(", ")}])`;
-        const schema = property.isOptional()
-          ? `${definedSchema}.optional()`
-          : typeToZodSchema(propertyType, declaration);
-        return `${propertyKey(property.getName())}: ${schema}`;
+        const schema =
+          property.flags & SymbolFlags.Optional ? `${definedSchema(propertyType)}.optional()` : convert(propertyType);
+        return `${propertyKey(property.name)}: ${schema}`;
       } catch (error) {
-        throw new Error(`Cannot generate a Zod schema for property ${property.getName()}`, { cause: error });
+        throw new Error(`Cannot generate a Zod schema for property ${property.name}`, { cause: error });
       }
     });
     return `z.strictObject({ ${fields.join(", ")} })`;
-  }
+  };
 
-  throw new Error(`Cannot generate a Zod schema for type: ${text}`);
+  /** Schema for an optional property's type, without the `undefined` its optionality adds. */
+  const definedSchema = (type: Type): string => {
+    const definedTypes = type.isUnionType()
+      ? type.getTypes().filter((member) => !(member.flags & TypeFlags.Undefined))
+      : [type];
+    const nonNullType =
+      definedTypes.length === 2 && definedTypes.some((member) => member.flags & TypeFlags.Null)
+        ? definedTypes.find((member) => !(member.flags & TypeFlags.Null))
+        : undefined;
+    if (nonNullType) return `${convert(nonNullType)}.nullable()`;
+    if (definedTypes.length === 1 && definedTypes[0]) return convert(definedTypes[0]);
+    return `z.union([${definedTypes.map(convert).join(", ")}])`;
+  };
+
+  const convertUncached = (type: Type): string => {
+    const { flags } = type;
+    if (flags & TypeFlags.String) return "z.string()";
+    if (flags & TypeFlags.Number) return "z.number()";
+    if (flags & TypeFlags.Boolean) return "z.boolean()";
+    if (type.isStringLiteralType() || type.isNumberLiteralType()) return literalSchema(type.value);
+    if (type.isBooleanLiteralType()) return literalSchema(type.value);
+    if (flags & TypeFlags.Null) return "z.null()";
+    if (flags & TypeFlags.Undefined) return "z.undefined()";
+    if (flags & TypeFlags.Never) return "z.never()";
+    if (flags & TypeFlags.Unknown) return "z.unknown()";
+    if (flags & TypeFlags.Any) throw new Error(`Cannot generate a Zod schema for any: ${checker.typeToString(type)}`);
+
+    if (type.isUnionType()) {
+      const members = type.getTypes();
+      if (members.length === 2) {
+        const defined = members.find((member) => !(member.flags & TypeFlags.Undefined));
+        if (defined && members.some((member) => member.flags & TypeFlags.Undefined)) {
+          return `${convert(defined)}.optional()`;
+        }
+        const nonNull = members.find((member) => !(member.flags & TypeFlags.Null));
+        if (nonNull && members.some((member) => member.flags & TypeFlags.Null)) return `${convert(nonNull)}.nullable()`;
+      }
+      return `z.union([${members.map(convert).join(", ")}])`;
+    }
+
+    if (type.isIntersectionType()) {
+      return type
+        .getTypes()
+        .map(convert)
+        .reduce((left, right) => `z.intersection(${left}, ${right})`);
+    }
+
+    if (type.isObjectType()) {
+      // Each checker call is a round trip, so only named and generic types are inspected further.
+      const { objectFlags } = type;
+      if (objectFlags & (ObjectFlags.ClassOrInterface | ObjectFlags.Reference)) {
+        const name = type.getSymbol()?.name;
+        if (name === "Date" || name === "NativeDate") return "z.date()";
+        if (name === "ObjectId") return "z.string()";
+      }
+      if (objectFlags & ObjectFlags.Reference) {
+        if (checker.isTupleType(type)) {
+          return `z.tuple([${checker
+            .getTypeArguments(type as TypeReference)
+            .map(convert)
+            .join(", ")}])`;
+        }
+        if (checker.isArrayType(type)) {
+          const [element] = checker.getTypeArguments(type as TypeReference);
+          if (element) return `z.array(${convert(element)})`;
+        }
+      }
+      return objectSchema(type);
+    }
+
+    throw new Error(`Cannot generate a Zod schema for type: ${checker.typeToString(type)}`);
+  };
+
+  const convert = (type: Type): string => {
+    const cached = memo.get(type.id);
+    if (cached !== undefined) return cached;
+    if (inProgress.has(type.id)) {
+      throw new Error(`Cannot generate a Zod schema for recursive type: ${checker.typeToString(type)}`);
+    }
+    inProgress.add(type.id);
+    try {
+      const schema = convertUncached(type);
+      memo.set(type.id, schema);
+      return schema;
+    } finally {
+      inProgress.delete(type.id);
+    }
+  };
+
+  return convert;
 };

@@ -1,9 +1,7 @@
-import { dirname, relative } from "path";
-import { Project, SourceFile } from "ts-morph";
+import { API, type Checker, type Type, TypeFlags } from "@typescript/native/unstable/sync";
+import { basename, dirname, join, relative } from "path";
 
-import { typeToZodSchema } from "@/zodSchema";
-
-const HTTP_METHODS = new Set(["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]);
+import { createZodSchemaConverter } from "@/zodSchema";
 
 const TYPE_HELPERS = `
 import type { z } from "zod";
@@ -32,7 +30,18 @@ type ResolvedResponse<Contract, Status extends PropertyKey> = Contract extends {
       : undefined
     : never
   : never;
+type HttpMethod = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
+type ResolvedContract<Contract> = {
+  [Method in keyof Contract as Method extends HttpMethod ? Method : never]: {
+    request: ResolvedRequest<Contract[Method]>;
+    responses: Contract[Method] extends { responses: infer Responses }
+      ? { [Status in keyof Responses]: ResolvedResponse<Contract[Method], Status> }
+      : never;
+  };
+};
 `;
+
+const HELPER_CONFIG_FILE_NAME = "tsconfig.next-typed-paths.json";
 
 const getModuleSpecifier = (fromPath: string, toPath: string): string => {
   const path = relative(dirname(fromPath), toPath)
@@ -51,84 +60,114 @@ export type ResolvedRouteContract = {
   methods: ResolvedContractMethod[];
 };
 
-type PreparedContract = {
-  methods: {
-    method: string;
-    requestAlias: string;
-    responses: { alias: string; status: string }[];
-  }[];
-  sourceFile: SourceFile;
+/** Fetches the properties of each type and their types, batching the type lookups into one request. */
+const getPropertyTypes = (checker: Checker, types: Type[]): { name: string; type: Type }[][] => {
+  const properties = types.map((type) => checker.getPropertiesOfType(type));
+  const flattened = properties.flat();
+  const propertyTypes = flattened.length > 0 ? checker.getTypeOfSymbol(flattened) : [];
+  let offset = 0;
+  return properties.map((symbols) =>
+    symbols.map((symbol) => {
+      const type = propertyTypes[offset++];
+      if (!type) throw new Error(`Cannot resolve the type of ${symbol.name}`);
+      return { name: symbol.name, type };
+    }),
+  );
 };
 
+/**
+ * Resolves the request and response wire schemas of route contracts with the TypeScript 7 native compiler.
+ * All contracts are checked in one program built from a virtual helper module that imports every route.
+ *
+ * @param routeFilePaths - Absolute paths of route files exporting a `routeContract`
+ * @param tsConfigFilePath - tsconfig.json providing compiler options and module resolution, if any
+ * @returns The resolved contracts, in the order of `routeFilePaths`
+ */
 export const resolveRouteContractsSchemas = (
-  project: Project,
-  routeSourceFiles: SourceFile[],
+  routeFilePaths: string[],
+  tsConfigFilePath?: string,
 ): ResolvedRouteContract[] => {
-  if (routeSourceFiles.length === 0) return [];
+  const [firstRoute] = routeFilePaths;
+  if (!firstRoute) return [];
 
-  const helperPath = `${routeSourceFiles[0]!.getFilePath()}.next-typed-paths.ts`;
-  const imports: string[] = [];
-  const aliases: string[] = [];
-  const preparedContracts: PreparedContract[] = [];
-
-  routeSourceFiles.forEach((routeSourceFile, contractIndex) => {
-    const contractSymbol = routeSourceFile.getExportSymbols().find((symbol) => symbol.getName() === "routeContract");
-    if (!contractSymbol) throw new Error(`${routeSourceFile.getFilePath()} does not export routeContract`);
-
-    const contractName = `contract_${contractIndex}`;
-    imports.push(
-      `import { routeContract as ${contractName} } from ${JSON.stringify(getModuleSpecifier(helperPath, routeSourceFile.getFilePath()))};`,
-    );
-    const contractType = contractSymbol.getTypeAtLocation(routeSourceFile);
-    const methods = contractType.getProperties().filter((symbol) => HTTP_METHODS.has(symbol.getName()));
-    const preparedMethods: PreparedContract["methods"] = [];
-    for (const method of methods) {
-      const methodName = method.getName();
-      const requestAlias = `Request_${contractIndex}_${methodName}`;
-      aliases.push(`type ${requestAlias} = ResolvedRequest<typeof ${contractName}.${methodName}>;`);
-      const methodType = method.getTypeAtLocation(routeSourceFile);
-      const responses = methodType.getPropertyOrThrow("responses").getTypeAtLocation(routeSourceFile);
-      const preparedResponses = responses.getProperties().map((response) => {
-        const status = response.getName();
-        const alias = `Response_${contractIndex}_${methodName}_${status}`;
-        aliases.push(`type ${alias} = ResolvedResponse<typeof ${contractName}.${methodName}, ${status}>;`);
-        return { alias, status };
-      });
-      preparedMethods.push({ method: methodName, requestAlias, responses: preparedResponses });
-    }
-    preparedContracts.push({ methods: preparedMethods, sourceFile: routeSourceFile });
+  // The helper sits next to a route so that `zod` resolves exactly as it does for the routes.
+  const helperPath = `${firstRoute}.next-typed-paths.ts`;
+  const configPath = join(dirname(tsConfigFilePath ?? helperPath), HELPER_CONFIG_FILE_NAME);
+  const config = JSON.stringify({
+    ...(tsConfigFilePath ? { extends: `./${basename(tsConfigFilePath)}` } : {}),
+    include: [],
+    files: [helperPath],
   });
 
-  const helperSource = project.createSourceFile(
-    helperPath,
-    `${imports.join("\n")}\n${TYPE_HELPERS}\n${aliases.join("\n")}`,
-    { overwrite: true },
+  const imports = routeFilePaths.map(
+    (routeFilePath, index) =>
+      `import { routeContract as contract_${index} } from ${JSON.stringify(getModuleSpecifier(helperPath, routeFilePath))};`,
   );
+  let helper = `${imports.join("\n")}\n${TYPE_HELPERS}\n`;
+  const aliasPositions = routeFilePaths.map((_, index) => {
+    const declaration = `type Contract_${index} = ResolvedContract<typeof contract_${index}>;\n`;
+    const position = helper.length + "type ".length;
+    helper += declaration;
+    return position;
+  });
+
+  // Only readFile is virtualized: every registered callback is a round trip per file, and module
+  // resolution probes far more files than it reads.
+  const api = new API({
+    cwd: dirname(configPath),
+    fs: {
+      readFile: (fileName) => (fileName === helperPath ? helper : fileName === configPath ? config : undefined),
+    },
+  });
 
   try {
-    return preparedContracts.map(({ methods, sourceFile }) => {
+    const project = api.updateSnapshot({ openProjects: [configPath] }).getProject(configPath);
+    if (!project) throw new Error(`Failed to load a TypeScript project for ${configPath}`);
+    const { checker } = project;
+    const toZodSchema = createZodSchemaConverter(checker);
+
+    const contractTypes = checker.getTypeAtPosition(helperPath, aliasPositions).map((type, index) => {
+      if (!type || type.flags & TypeFlags.Any) {
+        throw new Error(`Failed to resolve the routeContract type of ${routeFilePaths[index]}`);
+      }
+      return type;
+    });
+    const methodsByContract = getPropertyTypes(checker, contractTypes);
+    const methodParts = getPropertyTypes(
+      checker,
+      methodsByContract.flat().map(({ type }) => type),
+    );
+    const responsesByMethod = getPropertyTypes(
+      checker,
+      methodParts.map((parts) => {
+        const responses = parts.find(({ name }) => name === "responses");
+        if (!responses) throw new Error("Resolved contract method has no responses");
+        return responses.type;
+      }),
+    );
+
+    let methodIndex = 0;
+    return methodsByContract.map((methods, contractIndex) => {
       try {
         return {
-          methods: methods.map(({ method, requestAlias, responses }) => {
-            const requestDeclaration = helperSource.getTypeAliasOrThrow(requestAlias);
+          methods: methods.map(({ name: method }) => {
+            const parts = methodParts[methodIndex]!;
+            const responses = responsesByMethod[methodIndex]!;
+            methodIndex++;
+            const request = parts.find(({ name }) => name === "request");
+            if (!request) throw new Error(`Resolved contract method ${method} has no request`);
             return {
               method,
-              requestSchema: typeToZodSchema(requestDeclaration.getType(), requestDeclaration),
-              responses: responses.map(({ alias, status }) => {
-                const declaration = helperSource.getTypeAliasOrThrow(alias);
-                return { schema: typeToZodSchema(declaration.getType(), declaration), status };
-              }),
+              requestSchema: toZodSchema(request.type),
+              responses: responses.map(({ name: status, type }) => ({ schema: toZodSchema(type), status })),
             };
           }),
         };
       } catch (error) {
-        throw new Error(`Failed to resolve route contract in ${sourceFile.getFilePath()}`, { cause: error });
+        throw new Error(`Failed to resolve route contract in ${routeFilePaths[contractIndex]}`, { cause: error });
       }
     });
   } finally {
-    project.removeSourceFile(helperSource);
+    api.close();
   }
 };
-
-export const resolveRouteContractSchemas = (project: Project, routeSourceFile: SourceFile): ResolvedRouteContract =>
-  resolveRouteContractsSchemas(project, [routeSourceFile])[0]!;

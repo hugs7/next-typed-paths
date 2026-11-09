@@ -1,15 +1,13 @@
-import { Project } from "ts-morph";
+import { resolve } from "path";
 
 import { resolveRouteContractsSchemas } from "./contractType";
 
 describe("resolveRouteContractsSchemas", () => {
   it("resolves multiple route contracts in one compiler helper without mixing their schemas", () => {
-    const project = new Project({ tsConfigFilePath: "tsconfig.spec.json", skipAddingFilesFromTsConfig: true });
-    const userRoute = project.addSourceFileAtPath("test/app/api/(collections)/users/[userId]/route.ts");
-    const portableRoute = project.addSourceFileAtPath("test/app/api/portable/route.ts");
-    project.resolveSourceFileDependencies();
-
-    const [userContract, portableContract] = resolveRouteContractsSchemas(project, [userRoute, portableRoute]);
+    const [userContract, portableContract] = resolveRouteContractsSchemas(
+      [resolve("test/app/api/(collections)/users/[userId]/route.ts"), resolve("test/app/api/portable/route.ts")],
+      resolve("tsconfig.spec.json"),
+    );
 
     expect(userContract?.methods.map(({ method }) => method)).toEqual(["GET", "POST"]);
     expect(userContract?.methods[0]?.requestSchema).toContain('userId: z.literal("contract_user")');
