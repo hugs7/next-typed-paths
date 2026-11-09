@@ -11,6 +11,8 @@ import {
   Node,
   OptionalKind,
   Project,
+  StatementStructures,
+  StructureKind,
   VariableDeclarationKind,
   WriterFunction,
   Writers,
@@ -177,6 +179,8 @@ export const generateRouteFile = async (
   // Create in-memory TypeScript project
   const project = new Project({ useInMemoryFileSystem: true });
   const sourceFile = project.createSourceFile("routes.ts");
+  // Every ts-morph insertion reparses the whole file, so statements are collected and inserted once.
+  const statements: (string | StatementStructures)[] = [];
 
   // Collect imports, then insert them grouped and sorted once all statements are generated
   const imports: ImportStructure[] = [
@@ -214,13 +218,15 @@ export const generateRouteFile = async (
 
     const methods = contract.methods.map(({ method, requestSchema, responses }) => {
       const requestName = `${identifier}${pascalCase(method)}RequestSchema`;
-      sourceFile.addVariableStatement({
+      statements.push({
+        kind: StructureKind.VariableStatement,
         declarationKind: VariableDeclarationKind.Const,
         declarations: [{ initializer: requestSchema, name: requestName }],
       });
       const responseSchemas = responses.map(({ schema, status }) => {
         const responseName = `${identifier}${pascalCase(method)}Response${status}Schema`;
-        sourceFile.addVariableStatement({
+        statements.push({
+          kind: StructureKind.VariableStatement,
           declarationKind: VariableDeclarationKind.Const,
           declarations: [{ initializer: schema, name: responseName }],
         });
@@ -246,13 +252,14 @@ export const generateRouteFile = async (
       if (Node.isImportDeclaration(statement)) {
         imports.push(statement.getStructure());
       } else {
-        sourceFile.addStatements(statement.getText());
+        statements.push(statement.getText());
       }
     }
   }
 
   // Add route structure constant
-  sourceFile.addVariableStatement({
+  statements.push({
+    kind: StructureKind.VariableStatement,
     leadingTrivia: "// Route structure definition\n",
     declarationKind: VariableDeclarationKind.Const,
     declarations: [
@@ -267,7 +274,8 @@ export const generateRouteFile = async (
   });
 
   // Add type export
-  sourceFile.addTypeAlias({
+  statements.push({
+    kind: StructureKind.TypeAlias,
     leadingTrivia: "\n// Type-safe route builder with parameter types\n",
     isExported: true,
     name: typeName,
@@ -275,7 +283,8 @@ export const generateRouteFile = async (
   });
 
   // Add route builder instance
-  sourceFile.addVariableStatement({
+  statements.push({
+    kind: StructureKind.VariableStatement,
     leadingTrivia: "\n// Route builder instance\n",
     isExported: true,
     declarationKind: VariableDeclarationKind.Const,
@@ -287,6 +296,7 @@ export const generateRouteFile = async (
     ],
   });
 
+  sourceFile.addStatements(statements);
   sourceFile.insertImportDeclarations(0, groupImports(imports));
 
   const code = sourceFile.getFullText();
