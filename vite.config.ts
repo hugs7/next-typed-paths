@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 
 import { chmodSync, readFileSync } from "fs";
+import { builtinModules } from "module";
 import { resolve } from "path";
 import dts from "unplugin-dts/vite";
 import { defineConfig } from "vite";
@@ -81,27 +82,18 @@ export default defineConfig({
     },
     minify: isCI,
     rollupOptions: {
-      onLog(level, log, handler) {
-        // format.ts reads `__filename` in the CommonJS build, so its emptied `import.meta` is never evaluated.
-        if (log.code === "EMPTY_IMPORT_META" && log.id === fromRoot("src/format.ts")) return;
-        handler(level, log);
-      },
+      // Node platform makes the CommonJS build polyfill `import.meta.url` from `__filename`.
+      platform: "node",
       external: [
+        ...builtinModules.flatMap((name) => [name, `node:${name}`]),
         "@typescript/native/unstable/sync",
         "axios",
         "chokidar",
         "commander",
         "cosmiconfig",
-        "crypto",
         "es-toolkit",
-        "fs",
-        "fs/promises",
-        "module",
-        "path",
         "prettier",
         "ts-morph",
-        "url",
-        "worker_threads",
         "zod",
       ],
     },
