@@ -81,6 +81,11 @@ export default defineConfig({
     },
     minify: isCI,
     rollupOptions: {
+      onLog(level, log, handler) {
+        // format.ts reads `__filename` in the CommonJS build, so its emptied `import.meta` is never evaluated.
+        if (log.code === "EMPTY_IMPORT_META" && log.id === fromRoot("src/format.ts")) return;
+        handler(level, log);
+      },
       external: [
         "@typescript/native/unstable/sync",
         "axios",
