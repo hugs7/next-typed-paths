@@ -82,6 +82,7 @@ export default defineConfig({
     minify: isCI,
     rollupOptions: {
       external: [
+        "@typescript/native/unstable/sync",
         "axios",
         "chokidar",
         "commander",
@@ -90,10 +91,12 @@ export default defineConfig({
         "es-toolkit",
         "fs",
         "fs/promises",
+        "module",
         "path",
         "prettier",
         "ts-morph",
         "url",
+        "worker_threads",
         "zod",
       ],
     },

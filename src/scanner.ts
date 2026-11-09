@@ -234,6 +234,17 @@ export const scanDirectory = async (dirPath: string): Promise<RouteNode> => {
 };
 
 /**
+ * Find the nearest tsconfig.json in or above a directory.
+ */
+const findTsConfigFilePath = (directory: string): string | undefined => {
+  while (!existsSync(join(directory, "tsconfig.json"))) {
+    if (directory === parse(directory).root) return undefined;
+    directory = dirname(directory);
+  }
+  return join(directory, "tsconfig.json");
+};
+
+/**
  * Scan route structure and statically discover exported route contracts.
  */
 export const generateRouteManifest = async (
@@ -244,41 +255,28 @@ export const generateRouteManifest = async (
 ): Promise<RouteManifest> => {
   const resolvedPath = resolve(inputDir);
   const pendingContracts: PendingRouteContract[] = [];
-  let directory = resolvedPath;
-  while (!existsSync(join(directory, "tsconfig.json")) && directory !== parse(directory).root) {
-    directory = dirname(directory);
-  }
-  const tsConfigFilePath = join(directory, "tsconfig.json");
+  // Contract discovery is syntactic; types are resolved separately by the TypeScript 7 compiler.
   const project = discoverContracts
-    ? new Project({
-        ...(existsSync(tsConfigFilePath) ? { tsConfigFilePath } : {}),
-        skipAddingFilesFromTsConfig: true,
-        skipFileDependencyResolution: true,
-      })
+    ? new Project({ skipAddingFilesFromTsConfig: true, skipFileDependencyResolution: true })
     : undefined;
   const structure = await scanDirectoryNode(resolvedPath, [], pendingContracts, new Set(), discoverContracts, project);
 
   const cachedMethods = new Map<string, ResolvedContractMethod[]>();
-  if (emitContractSchemas && contractCache && project) {
+  if (emitContractSchemas && contractCache) {
     for (const contract of pendingContracts) {
       const cached = contractCache.get(contract.sourcePath);
       if (cached?.sourceText === contract.sourceFile.getFullText()) {
         cachedMethods.set(contract.sourcePath, cached.methods);
-        project.removeSourceFile(contract.sourceFile);
       }
     }
-  }
-
-  if (emitContractSchemas && cachedMethods.size < pendingContracts.length) {
-    project?.resolveSourceFileDependencies();
   }
 
   const unresolvedContracts = pendingContracts.filter((contract) => !cachedMethods.has(contract.sourcePath));
   const resolvedMethods = emitContractSchemas
     ? new Map(
         resolveRouteContractsSchemas(
-          project!,
-          unresolvedContracts.map((contract) => contract.sourceFile),
+          unresolvedContracts.map((contract) => contract.sourcePath),
+          findTsConfigFilePath(resolvedPath),
         ).map((contract, index) => [unresolvedContracts[index]!.sourcePath, contract.methods]),
       )
     : new Map<string, ResolvedContractMethod[]>();

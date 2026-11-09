@@ -169,6 +169,9 @@ importers:
 
   .:
     dependencies:
+      '@typescript/native':
+        specifier: npm:typescript@~7.0.2
+        version: typescript@7.0.2
       chokidar:
         specifier: ^6.0.0
         version: 6.0.0
