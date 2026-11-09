@@ -84,6 +84,8 @@ program
       process.exit(1);
     });
 
+    // Shared so that configs scanning the same route files resolve each contract once.
+    const contractCache: RouteContractCache = new Map();
     const results = await Promise.allSettled(
       baseConfigs.map(async (baseConfig) => {
         try {
@@ -94,7 +96,6 @@ program
             watch: options.watch,
             basePrefix: options.prefix,
           });
-          const contractCache: RouteContractCache | undefined = config.watch ? new Map() : undefined;
 
           // Generate initial routes
           await generateRoutes(config, contractCache);
