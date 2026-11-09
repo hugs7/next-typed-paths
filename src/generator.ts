@@ -20,6 +20,7 @@ import {
 
 import { defaultConfig } from "@/config";
 import { PACKAGE_NAME, PRETTIER_DEFAULT_CONFIG, RUNTIME_SUBMODULE } from "@/constants";
+import { formatCode } from "@/format";
 import { RouteNode } from "@/runtime";
 import { isMetadataKey } from "@/runtime/runtime";
 import type { RouteContractReference } from "@/scanner";
@@ -305,10 +306,7 @@ export const generateRouteFile = async (
   const prettierConfig = (await prettier.resolveConfig(config.output)) || PRETTIER_DEFAULT_CONFIG;
 
   // Add header comment and format with prettier
-  const formattedCode = await prettier.format(code, {
-    ...prettierConfig,
-    parser: "typescript",
-  });
+  const formattedCode = await formatCode(code, { ...prettierConfig, parser: "typescript" });
 
   const header = `/**
  * Auto-generated Next.js route builder
